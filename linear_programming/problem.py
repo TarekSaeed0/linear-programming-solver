@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional
 import numpy as np
 
 
@@ -10,21 +10,18 @@ class ObjectiveType(Enum):
 
 class Objective:
     type: ObjectiveType
-    coefficients: np.ndarray
+    coefficients: List[float]
 
     def __init__(
         self,
         type: ObjectiveType,
-        coefficients: Union[List[float], Tuple[float, ...], np.ndarray],
+        coefficients: List[float],
     ):
         self.type = type
-        self.coefficients = np.array(coefficients, dtype=float)
+        self.coefficients = coefficients
 
-    def evaluate(
-        self, values: Union[List[float], Tuple[float, ...], np.ndarray]
-    ) -> float:
-        value = np.dot(self.coefficients, np.array(values, dtype=float))
-        return value if self.type == ObjectiveType.MAXIMIZE else -value
+    def copy(self) -> "Objective":
+        return Objective(self.type, self.coefficients.copy())
 
 
 class ConstraintType(Enum):
@@ -35,31 +32,21 @@ class ConstraintType(Enum):
 
 class Constraint:
     type: ConstraintType
-    coefficients: np.ndarray
+    coefficients: List[float]
     constant: float
 
     def __init__(
         self,
         type: ConstraintType,
-        coefficients: Union[List[float], Tuple[float, ...], np.ndarray],
+        coefficients: List[float],
         constant: float,
     ):
         self.type = type
-        self.coefficients = np.array(coefficients, dtype=float)
+        self.coefficients = coefficients
         self.constant = constant
 
-    def is_satisfied(
-        self, values: Union[List[float], Tuple[float, ...], np.ndarray]
-    ) -> bool:
-        value = np.dot(self.coefficients, np.array(values, dtype=float))
-        if self.type == ConstraintType.LESS_EQUAL:
-            return value <= self.constant
-        elif self.type == ConstraintType.GREATER_EQUAL:
-            return value >= self.constant
-        elif self.type == ConstraintType.EQUAL:
-            return value == self.constant
-        else:
-            raise ValueError(f"Unknown relation: {self.type}")
+    def copy(self) -> "Constraint":
+        return Constraint(self.type, self.coefficients.copy(), self.constant)
 
 
 class VariableType(Enum):
@@ -101,6 +88,13 @@ class Problem:
         self.constraints = constraints
         self.variables = variables
 
+    def copy(self) -> "Problem":
+        return Problem(
+            self.objective.copy(),
+            [constraint.copy() for constraint in self.constraints],
+            self.variables.copy(),
+        )
+
     @property
     def c(self):
         return self.objective.coefficients
@@ -113,13 +107,29 @@ class Problem:
     def b(self):
         return np.array([constraint.constant for constraint in self.constraints])
 
-    def is_feasible(
-        self, values: Union[List[float], Tuple[float, ...], np.ndarray]
-    ) -> bool:
-        return all(constraint.is_satisfied(values) for constraint in self.constraints)
+    def to_standard_form(self) -> "Problem":
+        problem = self.copy()
+
+        for i, variable in enumerate(self.variables):
+            if variable.type == VariableType.UNRESTRICTED:
+                problem.objective.coefficients.insert(
+                    i + 1, -problem.objective.coefficients[i]
+                )
+
+                for constraint in problem.constraints:
+                    constraint.coefficients.insert(i + 1, -constraint.coefficients[i])
+
+                problem.variables[i] = Variable(
+                    VariableType.NON_NEGATIVE, variable.name + "⁺"
+                )
+                problem.variables.insert(
+                    i + 1, Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
+                )
+
+        return problem
 
     def __str__(self) -> str:
-        def polynomial_to_string(coefficients: np.ndarray) -> str:
+        def polynomial_to_string(coefficients: List[float]) -> str:
             result = ""
             for i, coefficient in enumerate(coefficients):
                 if coefficient == 0:
@@ -141,4 +151,11 @@ class Problem:
                 f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
                 for constraint in self.constraints
             )
+            + "\n"
+            + ",".join(
+                variable.name
+                for variable in self.variables
+                if variable.type == VariableType.NON_NEGATIVE
+            )
+            + " >= 0"
         )

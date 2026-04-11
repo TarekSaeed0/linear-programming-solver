@@ -16,9 +16,12 @@ problem = Problem(
     ],
     variables=[
         Variable(VariableType.NON_NEGATIVE, "x", 1),
-        Variable(VariableType.NON_NEGATIVE, "x", 2),
+        Variable(VariableType.UNRESTRICTED, "x", 2),
     ],
 )
 
 print(problem)
 
+standard_form = problem.to_standard_form()
+
+print(standard_form)
