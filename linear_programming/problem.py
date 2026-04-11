@@ -130,6 +130,18 @@ class Problem:
                     i + 1, Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
                 )
 
+        for i, constraint in enumerate(problem.constraints):
+            if constraint.type != ConstraintType.EQUAL:
+                problem.objective.coefficients.append(0)
+
+                coefficient = 1 if constraint.type == ConstraintType.LESS_EQUAL else -1
+                for j, constraint_ in enumerate(problem.constraints):
+                    constraint_.coefficients.append(coefficient if i == j else 0)
+
+                problem.variables.append(Variable(VariableType.NON_NEGATIVE, "s", i))
+
+                constraint.type = ConstraintType.EQUAL
+
         return problem
 
     def __str__(self) -> str:
@@ -144,14 +156,18 @@ class Problem:
                 elif coefficient < 0:
                     result += " - "
 
-                result += f"{abs(coefficient)}{self.variables[i].name}"
+                if abs(coefficient) != 1:
+                    result += str(abs(coefficient))
+
+                result += self.variables[i].name
 
             return result if result else "0"
 
         return (
             f"{self.objective.type.value} {polynomial_to_string(self.objective.coefficients)}"
             + "\n"
-            + "\n".join(
+            "subject to "
+            + "\n           ".join(
                 f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
                 for constraint in self.constraints
             )
