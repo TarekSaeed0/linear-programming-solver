@@ -90,9 +90,28 @@ class Problem:
         constraints: List[Constraint],
         variables: List[Variable],
     ):
+        assert len(objective.coefficients) == len(variables), (
+            "Objective function coefficients must match number of variables"
+        )
+        assert all(
+            len(constraint.coefficients) == len(variables) for constraint in constraints
+        ), "Constraints coefficients must match number of variables"
+
         self.objective = objective
         self.constraints = constraints
         self.variables = variables
+
+    @property
+    def c(self):
+        return self.objective.coefficients
+
+    @property
+    def A(self):
+        return np.array([constraint.coefficients for constraint in self.constraints])
+
+    @property
+    def b(self):
+        return np.array([constraint.constant for constraint in self.constraints])
 
     def is_feasible(
         self, values: Union[List[float], Tuple[float, ...], np.ndarray]
