@@ -97,15 +97,19 @@ class Problem:
 
     @property
     def c(self):
-        return self.objective.coefficients
+        return np.array(self.objective.coefficients, dtype=float)
 
     @property
     def A(self):
-        return np.array([constraint.coefficients for constraint in self.constraints])
+        return np.array(
+            [constraint.coefficients for constraint in self.constraints], dtype=float
+        )
 
     @property
     def b(self):
-        return np.array([constraint.constant for constraint in self.constraints])
+        return np.array(
+            [constraint.constant for constraint in self.constraints], dtype=float
+        )
 
     def to_standard_form(self) -> "Problem":
         problem = self.copy()
