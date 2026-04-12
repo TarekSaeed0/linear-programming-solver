@@ -7,8 +7,7 @@ from linear_programming.problem import (
     Variable,
     Problem,
 )
-from linear_programming.simplex import StandardSimplexMethod, Tableau
-import numpy as np
+from linear_programming.simplex import StandardSimplexMethod
 
 problem = Problem(
     objective=Objective(ObjectiveType.MAXIMIZE, [3, -2]),
@@ -33,3 +32,4 @@ solution = simplex.solve(standard_form)
 print(solution.type)
 print(solution.solution)
 print(solution.value)
+
