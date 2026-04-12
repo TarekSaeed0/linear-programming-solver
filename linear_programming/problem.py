@@ -138,7 +138,7 @@ class Problem:
                 for j, constraint_ in enumerate(problem.constraints):
                     constraint_.coefficients.append(coefficient if i == j else 0)
 
-                problem.variables.append(Variable(VariableType.NON_NEGATIVE, "s", i))
+                problem.variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
 
                 constraint.type = ConstraintType.EQUAL
 
@@ -167,11 +167,10 @@ class Problem:
             f"{self.objective.type.value} {polynomial_to_string(self.objective.coefficients)}"
             + "\n"
             "subject to "
-            + "\n           ".join(
-                f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
+            + "".join(
+                f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}\n           "
                 for constraint in self.constraints
             )
-            + "\n"
             + ",".join(
                 variable.name
                 for variable in self.variables
