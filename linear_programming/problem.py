@@ -65,6 +65,9 @@ class Variable:
         self.name = name
         self.type = type
 
+    def copy(self) -> "Variable":
+        return Variable(self.type, self.name)
+
 
 class Problem:
     objective: Objective
@@ -92,20 +95,17 @@ class Problem:
         return Problem(
             self.objective.copy(),
             [constraint.copy() for constraint in self.constraints],
-            self.variables.copy(),
+            [variable.copy() for variable in self.variables],
         )
 
-    @property
     def c(self):
         return np.array(self.objective.coefficients, dtype=float)
 
-    @property
     def A(self):
         return np.array(
             [constraint.coefficients for constraint in self.constraints], dtype=float
         )
 
-    @property
     def b(self):
         return np.array(
             [constraint.constant for constraint in self.constraints], dtype=float
@@ -114,14 +114,15 @@ class Problem:
     def to_standard_form(self) -> "Problem":
         problem = self.copy()
 
-        for i, variable in enumerate(self.variables):
+        i = 0
+        for j, variable in enumerate(self.variables):
             if variable.type == VariableType.UNRESTRICTED:
                 problem.objective.coefficients.insert(
-                    i + 1, -problem.objective.coefficients[i]
+                    i + 1, -self.objective.coefficients[j]
                 )
 
-                for constraint in problem.constraints:
-                    constraint.coefficients.insert(i + 1, -constraint.coefficients[i])
+                for k, constraint in enumerate(self.constraints):
+                    problem.constraints[k].coefficients.insert(i + 1, -constraint.coefficients[j])
 
                 problem.variables[i] = Variable(
                     VariableType.NON_NEGATIVE, variable.name + "⁺"
@@ -130,15 +131,18 @@ class Problem:
                     i + 1, Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
                 )
 
-        for i, constraint in enumerate(problem.constraints):
+                i += 1
+            i += 1
+
+        for j, constraint in enumerate(problem.constraints):
             if constraint.type != ConstraintType.EQUAL:
                 problem.objective.coefficients.append(0)
 
                 coefficient = 1 if constraint.type == ConstraintType.LESS_EQUAL else -1
-                for j, constraint_ in enumerate(problem.constraints):
-                    constraint_.coefficients.append(coefficient if i == j else 0)
+                for k, constraint_ in enumerate(problem.constraints):
+                    constraint_.coefficients.append(coefficient if j == k else 0)
 
-                problem.variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
+                problem.variables.append(Variable(VariableType.NON_NEGATIVE, "s", j + 1))
 
                 constraint.type = ConstraintType.EQUAL
 
@@ -163,18 +167,21 @@ class Problem:
 
             return result if result else "0"
 
+        non_negativity_constraint = ",".join(
+                variable.name
+                for variable in self.variables
+                if variable.type == VariableType.NON_NEGATIVE
+        )
+        if non_negativity_constraint != "":
+            non_negativity_constraint = "\n           " + non_negativity_constraint + " >= 0"
+
         return (
             f"{self.objective.type.value} {polynomial_to_string(self.objective.coefficients)}"
             + "\n"
             "subject to "
-            + "".join(
-                f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}\n           "
+            + "\n           ".join(
+                f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
                 for constraint in self.constraints
             )
-            + ",".join(
-                variable.name
-                for variable in self.variables
-                if variable.type == VariableType.NON_NEGATIVE
-            )
-            + " >= 0"
+            + non_negativity_constraint
         )

@@ -1,5 +1,6 @@
 import numpy as np
 from linear_programming.problem import Problem
+from linear_programming.solution import Solution, SolutionType
 
 
 class Tableau:
@@ -11,13 +12,13 @@ class Tableau:
             [
                 np.hstack(
                     [
-                        problem.A,
-                        problem.b.reshape(-1, 1),
+                        problem.A(),
+                        problem.b().reshape(-1, 1),
                     ]
                 ),
                 np.hstack(
                     [
-                        -problem.c,
+                        -problem.c(),
                         np.array([0]),
                     ]
                 ),
@@ -35,7 +36,8 @@ class Tableau:
                     self.basic_variables[i] = j
                     break
 
-        assert len(self.basic_variables) == self.data.shape[0] - 1, (
+        print(self.basic_variables)
+        assert len([x for x in self.basic_variables if x is not None]) == self.data.shape[0] - 1, (
             "Basic variables must match number of constraints"
         )
 
@@ -45,3 +47,14 @@ class Tableau:
             if k != row:
                 self.data[k] -= self.data[row] * self.data[k, column]
         self.basic_variables[row] = column
+
+    def solution(self) -> Solution:
+        solution = np.zeros(self.data.shape[1] - 1)
+        for i in range(self.data.shape[0] - 1):
+            if self.basic_variables[i] is not None:
+                solution[self.basic_variables[i]] = self.data[i, -1]
+        return Solution(
+            type=SolutionType.OPTIMAL,
+            solution=solution,
+            value=self.data[-1, -1],
+        )

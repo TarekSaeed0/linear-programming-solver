@@ -7,7 +7,7 @@ from linear_programming.problem import (
     Variable,
     Problem,
 )
-from linear_programming.simplex import StandardSimplexMethod
+from linear_programming.methods.standard_simplex import StandardSimplexMethod
 
 problem = Problem(
     objective=Objective(ObjectiveType.MAXIMIZE, [3, -2]),
@@ -16,19 +16,15 @@ problem = Problem(
         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 6),
     ],
     variables=[
-        Variable(VariableType.NON_NEGATIVE, "x", 1),
+        Variable(VariableType.UNRESTRICTED, "x", 1),
         Variable(VariableType.UNRESTRICTED, "x", 2),
     ],
 )
 
 print(problem)
 
-standard_form = problem.to_standard_form()
-
-print(standard_form)
-
 simplex = StandardSimplexMethod()
-solution = simplex.solve(standard_form)
+solution = simplex.solve(problem)
 print(solution.type)
 print(solution.solution)
 print(solution.value)
