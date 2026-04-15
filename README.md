@@ -1,6 +1,6 @@
 <h1 align="center">Linear Programming Solver</h1>
 
-<p align="center"> A solver for linear programming problems written in python  </p>
+<p align="center"> Solver for linear programming problems written in python  </p>
 
 <div align="center">
 

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from linear_programming.problem import Problem
-from linear_programming.solution import Solution
+from src.linear_programming.problem import Problem
+from src.linear_programming.solution import Solution
+
 
 class Method(ABC):
     @abstractmethod

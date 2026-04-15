@@ -1,4 +1,5 @@
-from linear_programming.problem import (
+from src.linear_programming.methods.two_phase import TwoPhaseMethod
+from src.linear_programming.problem import (
     ObjectiveType,
     Objective,
     ConstraintType,
@@ -7,25 +8,26 @@ from linear_programming.problem import (
     Variable,
     Problem,
 )
-from linear_programming.methods.standard_simplex import StandardSimplexMethod
 
-problem = Problem(
-    objective=Objective(ObjectiveType.MAXIMIZE, [3, -2]),
-    constraints=[
-        Constraint(ConstraintType.LESS_EQUAL, [1, -1], 4),
-        Constraint(ConstraintType.LESS_EQUAL, [2, 1], 6),
-    ],
-    variables=[
-        Variable(VariableType.UNRESTRICTED, "x", 1),
-        Variable(VariableType.UNRESTRICTED, "x", 2),
-    ],
-)
 
-print(problem)
+def main():
+    problem = Problem(
+        objective=Objective(ObjectiveType.MAXIMIZE, [4, 5]),
+        constraints=[
+            Constraint(ConstraintType.LESS_EQUAL, [2, 3], 6),
+            Constraint(ConstraintType.GREATER_EQUAL, [3, 1], 3),
+        ],
+        variables=[
+            Variable(VariableType.NON_NEGATIVE, "x"),
+            Variable(VariableType.NON_NEGATIVE, "y"),
+        ],
+    )
 
-simplex = StandardSimplexMethod()
-solution = simplex.solve(problem)
-print(solution.type)
-print(solution.solution)
-print(solution.value)
+    print(problem)
 
+    method = TwoPhaseMethod()
+    print(method.solve(problem))
+
+
+if __name__ == "__main__":
+    main()

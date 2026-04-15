@@ -1,0 +1,13 @@
+[project]
+name = "linear-programming-solver"
+version = "0.1.0"
+description = "Solver for linear programming problems written in python"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = ["numpy>=2.4.4"]
+
+[dependency-groups]
+dev = ["ruff>=0.15.10"]
+
+[tool.ruff.lint]
+extend-select = ["PL", "UP", "PERF", "RUF", "NPY"]
