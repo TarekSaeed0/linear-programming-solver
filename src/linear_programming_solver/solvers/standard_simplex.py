@@ -1,8 +1,8 @@
 import numpy as np
-from src.linear_programming.solver import Solver
-from src.linear_programming.problem import Problem
-from src.linear_programming.solution import Solution, UnboundedSolution
-from src.linear_programming.tableau import Tableau
+from src.linear_programming_solver.solver import Solver
+from src.linear_programming_solver.problem import Problem
+from src.linear_programming_solver.solution import Solution, UnboundedSolution
+from src.linear_programming_solver.tableau import Tableau
 
 
 class StandardSimplexMethod(Solver):

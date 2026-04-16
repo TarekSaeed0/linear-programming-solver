@@ -1,7 +1,7 @@
 import math
 import numpy as np
-from src.linear_programming.problem import Problem
-from src.linear_programming.solution import OptimalSolution, Solution
+from src.linear_programming_solver.problem import Problem
+from src.linear_programming_solver.solution import OptimalSolution, Solution
 
 
 class Tableau:

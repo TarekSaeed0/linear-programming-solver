@@ -1,6 +1,6 @@
 import math
-from src.linear_programming.solvers.standard_simplex import StandardSimplexMethod
-from src.linear_programming.problem import (
+from src.linear_programming_solver.solvers.standard_simplex import StandardSimplexMethod
+from src.linear_programming_solver.problem import (
     ConstraintType,
     Objective,
     ObjectiveType,
@@ -8,8 +8,8 @@ from src.linear_programming.problem import (
     Variable,
     VariableType,
 )
-from src.linear_programming.solution import InfeasibleSolution, Solution, SolutionType
-from src.linear_programming.tableau import Tableau
+from src.linear_programming_solver.solution import InfeasibleSolution, Solution, SolutionType
+from src.linear_programming_solver.tableau import Tableau
 
 
 class TwoPhaseMethod(StandardSimplexMethod):
