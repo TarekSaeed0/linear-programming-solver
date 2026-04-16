@@ -1,4 +1,4 @@
-from src.linear_programming.methods.two_phase import TwoPhaseMethod
+from src.linear_programming.solvers.two_phase import TwoPhaseMethod
 from src.linear_programming.problem import (
     ObjectiveType,
     Objective,

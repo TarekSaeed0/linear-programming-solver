@@ -1,11 +1,11 @@
 import numpy as np
-from src.linear_programming.method import Method
+from src.linear_programming.solver import Solver
 from src.linear_programming.problem import Problem
 from src.linear_programming.solution import Solution, UnboundedSolution
 from src.linear_programming.tableau import Tableau
 
 
-class StandardSimplexMethod(Method):
+class StandardSimplexMethod(Solver):
     def pivot_column(self, tableau: Tableau) -> int:
         return tableau.data[-1, :-1].argmin().astype(int).item()
 
