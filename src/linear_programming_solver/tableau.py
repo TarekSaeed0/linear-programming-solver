@@ -1,7 +1,7 @@
 import math
 import numpy as np
-from src.linear_programming_solver.problem import Problem
-from src.linear_programming_solver.solution import OptimalSolution, Solution
+from linear_programming_solver.problem import Problem
+from linear_programming_solver.solution import OptimalSolution, Solution
 
 
 class Tableau:
@@ -37,7 +37,6 @@ class Tableau:
                     self.pivots[i] = j
                     break
 
-        print(self.pivots)
         assert (
             len([x for x in self.pivots if x is not None]) == self.data.shape[0] - 1
         ), "Basic variables must match number of constraints"

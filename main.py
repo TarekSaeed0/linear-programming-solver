@@ -1,5 +1,5 @@
-from src.linear_programming_solver.solvers.two_phase import TwoPhaseMethod
-from src.linear_programming_solver.problem import (
+from linear_programming_solver.solvers.two_phase import TwoPhaseMethod
+from linear_programming_solver.problem import (
     ObjectiveType,
     Objective,
     ConstraintType,

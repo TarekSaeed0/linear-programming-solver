@@ -7,11 +7,10 @@ requires-python = ">=3.14"
 dependencies = ["numpy>=2.4.4"]
 
 [dependency-groups]
-dev = [
-    "pytest>=9.0.3",
-    "pytest-cov>=7.1.0",
-    "ruff>=0.15.10",
-]
+dev = ["pytest>=9.0.3", "pytest-cov>=7.1.0", "ruff>=0.15.10"]
 
 [tool.ruff.lint]
 extend-select = ["PL", "UP", "PERF", "RUF", "NPY"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
