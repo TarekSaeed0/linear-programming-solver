@@ -11,4 +11,4 @@ class SolverFactory:
             case "two-phase-simplex":
                 return TwoPhaseSimplex()
             case _:
-                raise RuntimeError(f"{name} is not the name of a known solver")
+                raise ValueError(f"{name} is not the name of a known solver")
