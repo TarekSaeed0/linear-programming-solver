@@ -1,5 +1,5 @@
 import math
-from linear_programming_solver.solvers.standard_simplex import StandardSimplexMethod
+from linear_programming_solver.solvers.standard_simplex import StandardSimplex
 from linear_programming_solver.problem import (
     ConstraintType,
     Objective,
@@ -16,7 +16,7 @@ from linear_programming_solver.solution import (
 from linear_programming_solver.tableau import Tableau
 
 
-class TwoPhaseMethod(StandardSimplexMethod):
+class TwoPhaseSimplex(StandardSimplex):
     def to_artificial(self, problem: Problem) -> tuple[list[int], Problem]:
         artificial_problem = problem.copy()
         artificial_problem.objective = Objective(
@@ -32,6 +32,7 @@ class TwoPhaseMethod(StandardSimplexMethod):
                 for j, other_constraint in enumerate(artificial_problem.constraints):
                     other_constraint.coefficients.append(1 if j == i else 0)
 
+                # BUG: we assume that a variable with the name "w_{i + 1}" does not already exist, which may not be the case
                 artificial_problem.variables.append(
                     Variable(VariableType.NON_NEGATIVE, "w", i + 1)
                 )

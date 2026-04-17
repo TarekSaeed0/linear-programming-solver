@@ -5,7 +5,7 @@ from linear_programming_solver.solution import Solution, UnboundedSolution
 from linear_programming_solver.tableau import Tableau
 
 
-class StandardSimplexMethod(Solver):
+class StandardSimplex(Solver):
     def pivot_column(self, tableau: Tableau) -> int:
         return tableau.data[-1, :-1].argmin().astype(int).item()
 

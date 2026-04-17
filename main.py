@@ -1,4 +1,4 @@
-from linear_programming_solver.solvers.two_phase import TwoPhaseMethod
+from linear_programming_solver.solvers.two_phase_simplex import TwoPhaseSimplex
 from linear_programming_solver.problem import (
     ObjectiveType,
     Objective,
@@ -25,7 +25,7 @@ def main():
 
     print(problem)
 
-    method = TwoPhaseMethod()
+    method = TwoPhaseSimplex()
     print(method.solve(problem))
 
 

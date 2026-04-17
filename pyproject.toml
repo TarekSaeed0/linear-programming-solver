@@ -3,8 +3,14 @@ name = "linear-programming-solver"
 version = "0.1.0"
 description = "Solver for linear programming problems written in python"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.14"
 dependencies = ["numpy>=2.4.4"]
+
+[project.urls]
+Repository = "https://github.com/TarekSaeed0/linear-programming-solver"
+"Bug Tracker" = "https://github.com/TarekSaeed0/linear-programming-solver/issues"
 
 [dependency-groups]
 dev = ["pytest>=9.0.3", "pytest-cov>=7.1.0", "ruff>=0.15.10"]
@@ -12,5 +18,5 @@ dev = ["pytest>=9.0.3", "pytest-cov>=7.1.0", "ruff>=0.15.10"]
 [tool.ruff.lint]
 extend-select = ["PL", "UP", "PERF", "RUF", "NPY"]
 
-[tool.pytest.ini_options]
-pythonpath = ["src"]
+[tool.coverage.report]
+exclude_lines = ["@abstractmethod", "__str__"]

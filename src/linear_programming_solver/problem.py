@@ -55,6 +55,7 @@ class Variable:
         return Variable(self.type, self.name)
 
 
+@dataclass
 class Problem:
     objective: Objective
     constraints: list[Constraint]
@@ -72,6 +73,8 @@ class Problem:
         assert all(
             len(constraint.coefficients) == len(variables) for constraint in constraints
         ), "Constraints coefficients must match number of variables"
+
+        # BUG: need to check that variable names are unique, otherwise the string representation of the problem may be incorrect
 
         self.objective = objective
         self.constraints = constraints
