@@ -73,6 +73,6 @@ class Tableau:
                 solution[self.pivots[i]] = self.data[i, -1]
 
         return OptimalSolution(
-            solution=solution,
+            solution=solution.tolist(),
             value=self.data[-1, -1],
         )

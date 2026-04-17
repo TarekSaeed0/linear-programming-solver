@@ -9,13 +9,16 @@ class ObjectiveType(Enum):
     MINIMIZE = "minimize"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Objective:
     type: ObjectiveType
-    coefficients: list[float]
+    coefficients: tuple[float, ...]
 
-    def copy(self) -> Objective:
-        return Objective(self.type, self.coefficients.copy())
+    def __init__(
+        self, type: ObjectiveType, coefficients: tuple[float, ...] | list[float]
+    ):
+        object.__setattr__(self, "type", type)
+        object.__setattr__(self, "coefficients", tuple(coefficients))
 
 
 class ConstraintType(Enum):
@@ -24,14 +27,21 @@ class ConstraintType(Enum):
     EQUAL = "="
 
 
-@dataclass
+@dataclass(frozen=True)
 class Constraint:
     type: ConstraintType
-    coefficients: list[float]
+    coefficients: tuple[float, ...]
     constant: float
 
-    def copy(self) -> Constraint:
-        return Constraint(self.type, self.coefficients.copy(), self.constant)
+    def __init__(
+        self,
+        type: ConstraintType,
+        coefficients: tuple[float, ...] | list[float],
+        constant: float,
+    ):
+        object.__setattr__(self, "type", type)
+        object.__setattr__(self, "coefficients", tuple(coefficients))
+        object.__setattr__(self, "constant", constant)
 
 
 class VariableType(Enum):
@@ -39,7 +49,7 @@ class VariableType(Enum):
     UNRESTRICTED = "unrestricted"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Variable:
     type: VariableType
     name: str
@@ -48,24 +58,22 @@ class Variable:
         subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
         if index is not None:
             name += str(index).translate(subscript_table)
-        self.name = name
-        self.type = type
 
-    def copy(self) -> Variable:
-        return Variable(self.type, self.name)
+        object.__setattr__(self, "type", type)
+        object.__setattr__(self, "name", name)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Problem:
     objective: Objective
-    constraints: list[Constraint]
-    variables: list[Variable]
+    constraints: tuple[Constraint, ...]
+    variables: tuple[Variable, ...]
 
     def __init__(
         self,
         objective: Objective,
-        constraints: list[Constraint],
-        variables: list[Variable],
+        constraints: tuple[Constraint, ...] | list[Constraint],
+        variables: tuple[Variable, ...] | list[Variable],
     ):
         assert len(objective.coefficients) == len(variables), (
             "Objective function coefficients must match number of variables"
@@ -74,18 +82,13 @@ class Problem:
             len(constraint.coefficients) == len(variables) for constraint in constraints
         ), "Constraints coefficients must match number of variables"
 
-        # BUG: need to check that variable names are unique, otherwise the string representation of the problem may be incorrect
-
-        self.objective = objective
-        self.constraints = constraints
-        self.variables = variables
-
-    def copy(self) -> Problem:
-        return Problem(
-            self.objective.copy(),
-            [constraint.copy() for constraint in self.constraints],
-            [variable.copy() for variable in self.variables],
+        assert len(set(variable.name for variable in variables)) == len(variables), (
+            "Variable names must be unique"
         )
+
+        object.__setattr__(self, "objective", objective)
+        object.__setattr__(self, "constraints", tuple(constraints))
+        object.__setattr__(self, "variables", tuple(variables))
 
     def c(self):
         return np.array(self.objective.coefficients, dtype=float)
@@ -100,55 +103,94 @@ class Problem:
             [constraint.constant for constraint in self.constraints], dtype=float
         )
 
-    def to_standard_form(self) -> Problem:
-        standard_form = self.copy()
+    def to_standard_objective(self) -> Problem:
+        if self.objective.type == ObjectiveType.MINIMIZE:
+            return self
 
-        i = 0
-        for j, variable in enumerate(self.variables):
-            if variable.type == VariableType.UNRESTRICTED:
-                standard_form.objective.coefficients.insert(
-                    i + 1, -self.objective.coefficients[j]
-                )
+        return Problem(
+            Objective(
+                ObjectiveType.MINIMIZE,
+                tuple(-coefficient for coefficient in self.objective.coefficients),
+            ),
+            self.constraints,
+            self.variables,
+        )
 
-                for k, constraint in enumerate(self.constraints):
-                    standard_form.constraints[k].coefficients.insert(
-                        i + 1, -constraint.coefficients[j]
-                    )
+    def to_standard_constraints(self) -> Problem:
+        objective_coefficients: list[float] = list(self.objective.coefficients)
+        constraints_coefficients: list[list[float]] = [
+            list(constraint.coefficients) for constraint in self.constraints
+        ]
+        variables: list[Variable] = list(self.variables)
 
-                standard_form.variables[i] = Variable(
-                    VariableType.NON_NEGATIVE, variable.name + "⁺"
-                )
-                standard_form.variables.insert(
-                    i + 1, Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
-                )
-
-                i += 1
-            i += 1
-
-        for j, constraint in enumerate(standard_form.constraints):
+        for i, constraint in enumerate(self.constraints):
             if constraint.type != ConstraintType.EQUAL:
-                standard_form.objective.coefficients.append(0)
+                objective_coefficients.append(0)
 
                 coefficient = 1 if constraint.type == ConstraintType.LESS_EQUAL else -1
-                for k, other_constraint in enumerate(standard_form.constraints):
-                    other_constraint.coefficients.append(coefficient if j == k else 0)
+                for j, constraint_coefficients in enumerate(constraints_coefficients):
+                    constraint_coefficients.append(coefficient if i == j else 0)
 
-                standard_form.variables.append(
-                    Variable(VariableType.NON_NEGATIVE, "s", j + 1)
+                variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
+
+        return Problem(
+            Objective(self.objective.type, tuple(objective_coefficients)),
+            [
+                Constraint(
+                    ConstraintType.EQUAL, tuple(coefficients), constraint.constant
+                )
+                for constraint, coefficients in zip(
+                    self.constraints, constraints_coefficients
+                )
+            ],
+            tuple(variables),
+        )
+
+    def to_standard_variables(self) -> Problem:
+        objective_coefficients: list[float] = []
+        constraints_coefficients: list[list[float]] = [[] for _ in self.constraints]
+        variables: list[Variable] = []
+        for i, variable in enumerate(self.variables):
+            objective_coefficients.append(self.objective.coefficients[i])
+
+            for j, constraint in enumerate(self.constraints):
+                constraints_coefficients[j].append(constraint.coefficients[i])
+
+            if variable.type == VariableType.NON_NEGATIVE:
+                variables.append(variable)
+            else:
+                objective_coefficients.append(-self.objective.coefficients[i])
+
+                for j, constraint in enumerate(self.constraints):
+                    constraints_coefficients[j].append(-constraint.coefficients[i])
+
+                variables.append(
+                    Variable(VariableType.NON_NEGATIVE, variable.name + "⁺")
+                )
+                variables.append(
+                    Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
                 )
 
-                constraint.type = ConstraintType.EQUAL
+        return Problem(
+            Objective(self.objective.type, tuple(objective_coefficients)),
+            [
+                Constraint(constraint.type, tuple(coefficients), constraint.constant)
+                for constraint, coefficients in zip(
+                    self.constraints, constraints_coefficients
+                )
+            ],
+            tuple(variables),
+        )
 
-        if standard_form.objective.type == ObjectiveType.MAXIMIZE:
-            standard_form.objective.type = ObjectiveType.MINIMIZE
-            standard_form.objective.coefficients = [
-                -c for c in standard_form.objective.coefficients
-            ]
-
-        return standard_form
+    def to_standard_form(self) -> Problem:
+        return (
+            self.to_standard_objective()
+            .to_standard_constraints()
+            .to_standard_variables()
+        )
 
     def __str__(self) -> str:
-        def polynomial_to_string(coefficients: list[float]) -> str:
+        def polynomial_to_string(coefficients: tuple[float, ...]) -> str:
             result = ""
             for i, coefficient in enumerate(coefficients):
                 if coefficient == 0:

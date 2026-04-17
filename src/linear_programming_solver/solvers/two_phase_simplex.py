@@ -1,6 +1,7 @@
 import math
 from linear_programming_solver.solvers.standard_simplex import StandardSimplex
 from linear_programming_solver.problem import (
+    Constraint,
     ConstraintType,
     Objective,
     ObjectiveType,
@@ -18,26 +19,34 @@ from linear_programming_solver.tableau import Tableau
 
 class TwoPhaseSimplex(StandardSimplex):
     def to_artificial(self, problem: Problem) -> tuple[list[int], Problem]:
-        artificial_problem = problem.copy()
-        artificial_problem.objective = Objective(
-            ObjectiveType.MINIMIZE, [0] * len(artificial_problem.objective.coefficients)
-        )
+        objective_coefficients: list[float] = [0] * len(problem.objective.coefficients)
+        constraints_coefficients: list[list[float]] = [
+            list(constraint.coefficients) for constraint in problem.constraints
+        ]
+        variables: list[Variable] = list(problem.variables)
         artificial_variables: list[int] = []
-        for i, constraint in enumerate(artificial_problem.constraints):
+
+        for i, constraint in enumerate(problem.constraints):
             if constraint.type in (ConstraintType.GREATER_EQUAL, ConstraintType.EQUAL):
-                artificial_variables.append(len(artificial_problem.variables))
+                objective_coefficients.append(1)
 
-                artificial_problem.objective.coefficients.append(1)
-
-                for j, other_constraint in enumerate(artificial_problem.constraints):
-                    other_constraint.coefficients.append(1 if j == i else 0)
+                for j, constraint_coefficients in enumerate(constraints_coefficients):
+                    constraint_coefficients.append(1 if i == j else 0)
 
                 # BUG: we assume that a variable with the name "w_{i + 1}" does not already exist, which may not be the case
-                artificial_problem.variables.append(
-                    Variable(VariableType.NON_NEGATIVE, "w", i + 1)
-                )
+                variables.append(Variable(VariableType.NON_NEGATIVE, "w", i + 1))
+                artificial_variables.append(len(variables) - 1)
 
-        return artificial_variables, artificial_problem
+        return artificial_variables, Problem(
+            Objective(ObjectiveType.MINIMIZE, tuple(objective_coefficients)),
+            [
+                Constraint(constraint.type, tuple(coefficients), constraint.constant)
+                for constraint, coefficients in zip(
+                    problem.constraints, constraints_coefficients
+                )
+            ],
+            tuple(variables),
+        )
 
     def solve(self, problem: Problem) -> Solution:
         artificial_variables, artificial_problem = self.to_artificial(problem)

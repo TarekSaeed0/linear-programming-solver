@@ -16,40 +16,17 @@ class TestObjective:
     def objective(self) -> Objective:
         return Objective(ObjectiveType.MAXIMIZE, [1, 2, 3])
 
-    def test_copy(self, objective: Objective):
-        copy = objective.copy()
-
-        assert copy is not objective
-        assert copy.coefficients is not objective.coefficients
-
-        assert copy == objective
-
 
 class TestConstraint:
     @pytest.fixture
     def constraint(self) -> Constraint:
         return Constraint(ConstraintType.GREATER_EQUAL, [1, 2, 3], 4)
 
-    def test_copy(self, constraint: Constraint):
-        copy = constraint.copy()
-
-        assert copy is not constraint
-        assert copy.coefficients is not constraint.coefficients
-
-        assert copy == constraint
-
 
 class TestVariable:
     @pytest.fixture
     def variable(self) -> Variable:
         return Variable(VariableType.NON_NEGATIVE, "x", 1)
-
-    def test_copy(self, variable: Variable):
-        copy = variable.copy()
-
-        assert copy is not variable
-
-        assert copy == variable
 
 
 class TestProblem:
@@ -66,28 +43,6 @@ class TestProblem:
                 Variable(VariableType.UNRESTRICTED, "y"),
             ],
         )
-
-    def test_copy(self, problem: Problem):
-        copy = problem.copy()
-
-        assert copy is not problem
-        assert copy.objective is not problem.objective
-        assert copy.constraints is not problem.constraints
-        assert all(
-            copy_constraint is not problem_constraint
-            for copy_constraint, problem_constraint in zip(
-                copy.constraints, problem.constraints
-            )
-        )
-        assert copy.variables is not problem.variables
-        assert all(
-            copy_variable is not problem_variable
-            for copy_variable, problem_variable in zip(
-                copy.variables, problem.variables
-            )
-        )
-
-        assert copy == problem
 
     def test_c_A_b(self, problem: Problem):
         assert problem.c().tolist() == [1.0, 2.0]
