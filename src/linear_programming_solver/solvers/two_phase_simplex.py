@@ -66,8 +66,10 @@ class TwoPhaseSimplex(StandardSimplex):
         if solution.type != SolutionType.OPTIMAL or not math.isclose(solution.value, 0):
             return InfeasibleSolution()
 
+        standard_form = problem.to_standard_form()
+
         tableau.remove_variables(artificial_variables)
-        tableau.replace_objective(problem.to_standard_form().c())
+        tableau.replace_objective(standard_form.c())
 
         solution = self.solve_tableau(tableau)
-        return solution
+        return solution.map(standard_form.variables_mapper)
