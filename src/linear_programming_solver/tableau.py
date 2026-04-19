@@ -55,6 +55,7 @@ class Tableau:
 
     def remove_variables(self, columns: list[int]):
         for column in columns:
+            assert column < self.data.shape[1] - 1, "Cannot remove the constant column"
             assert column not in self.pivots, "Cannot remove a basic variable"
 
         self.data = np.delete(self.data, columns, axis=1)

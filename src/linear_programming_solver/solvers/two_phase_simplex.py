@@ -8,6 +8,7 @@ from linear_programming_solver.problem import (
     Problem,
     Variable,
     VariableType,
+    VariablesMapper,
 )
 from linear_programming_solver.solution import (
     InfeasibleSolution,
@@ -38,14 +39,21 @@ class TwoPhaseSimplex(StandardSimplex):
                 artificial_variables.append(len(variables) - 1)
 
         return artificial_variables, Problem(
-            Objective(ObjectiveType.MINIMIZE, tuple(objective_coefficients)),
-            [
+            objective=Objective(ObjectiveType.MINIMIZE, tuple(objective_coefficients)),
+            constraints=[
                 Constraint(constraint.type, tuple(coefficients), constraint.constant)
                 for constraint, coefficients in zip(
                     problem.constraints, constraints_coefficients
                 )
             ],
-            tuple(variables),
+            variables=tuple(variables),
+            variables_mapper=VariablesMapper(
+                tuple(
+                    lambda variables, i=i: variables[i]
+                    for i in range(len(problem.variables))
+                ),
+                parent=problem.variables_mapper,
+            ),
         )
 
     def solve(self, problem: Problem) -> Solution:
@@ -61,4 +69,5 @@ class TwoPhaseSimplex(StandardSimplex):
         tableau.remove_variables(artificial_variables)
         tableau.replace_objective(problem.to_standard_form().c())
 
-        return self.solve_tableau(tableau)
+        solution = self.solve_tableau(tableau)
+        return solution

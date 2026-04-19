@@ -52,6 +52,7 @@ class TestStandardSimplex:
         solution = solver.solve(problem)
 
         assert solution.type == SolutionType.OPTIMAL
+        assert solution.solution == pytest.approx((0.0, 3.0))  # type: ignore
         assert solution.value == pytest.approx(6.0)  # type: ignore
 
         unbounded_solution = solver.solve(unbounded_problem)

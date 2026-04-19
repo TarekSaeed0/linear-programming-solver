@@ -1,7 +1,10 @@
 import numpy as np
 from linear_programming_solver.solver import Solver
 from linear_programming_solver.problem import Problem
-from linear_programming_solver.solution import Solution, UnboundedSolution
+from linear_programming_solver.solution import (
+    Solution,
+    UnboundedSolution,
+)
 from linear_programming_solver.tableau import Tableau
 
 
@@ -33,4 +36,6 @@ class StandardSimplex(Solver):
             tableau.pivot(row, column)
 
     def solve(self, problem: Problem) -> Solution:
-        return self.solve_tableau(Tableau(problem.to_standard_form()))
+        standard_problem = problem.to_standard_form()
+        solution = self.solve_tableau(Tableau(standard_problem))
+        return solution.map(standard_problem.variables_mapper)

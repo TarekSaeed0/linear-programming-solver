@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
+from linear_programming_solver.problem import VariablesMapper
+
 
 class SolutionType(Enum):
     OPTIMAL = "optimal"
@@ -20,6 +22,11 @@ class OptimalSolution:
         object.__setattr__(self, "solution", tuple(solution))
         object.__setattr__(self, "value", value)
 
+    def map(self, variables_mapper: VariablesMapper | None) -> OptimalSolution:
+        if variables_mapper is None:
+            return self
+        return OptimalSolution(variables_mapper.map(self.solution), self.value)
+
     def __str__(self) -> str:
         return f"Optimal solution: {self.solution}, value: {self.value}"
 
@@ -30,6 +37,9 @@ class UnboundedSolution:
         default=SolutionType.UNBOUNDED, init=False
     )
 
+    def map(self, variables_mapper: VariablesMapper | None) -> UnboundedSolution:
+        return self
+
     def __str__(self) -> str:
         return "The solution is unbounded."
 
@@ -39,6 +49,9 @@ class InfeasibleSolution:
     type: Literal[SolutionType.INFEASIBLE] = field(
         default=SolutionType.INFEASIBLE, init=False
     )
+
+    def map(self, variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
+        return self
 
     def __str__(self) -> str:
         return "The solution is infeasible."
