@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 from linear_programming_solver.problem import (
@@ -9,8 +11,21 @@ from linear_programming_solver.problem import (
     Variable,
     VariableType,
 )
-from linear_programming_solver.solution import SolutionType
+from linear_programming_solver.solution import (
+    OptimalSolution,
+    Solution,
+    SolutionType,
+    UnboundedSolution,
+)
 from linear_programming_solver.solvers.standard_simplex import StandardSimplex
+
+
+@dataclass
+class TestCase:
+    __test__ = False
+
+    problem: Problem
+    expected_solution: Solution
 
 
 class TestStandardSimplex:
@@ -19,41 +34,47 @@ class TestStandardSimplex:
         return StandardSimplex()
 
     @pytest.fixture
-    def problem(self) -> Problem:
-        return Problem(
-            objective=Objective(ObjectiveType.MAXIMIZE, [1, 2]),
-            constraints=[
-                Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
-                Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
-            ],
-            variables=[
-                Variable(VariableType.NON_NEGATIVE, "x", 1),
-                Variable(VariableType.NON_NEGATIVE, "x", 2),
-            ],
-        )
+    def problems(self) -> list[TestCase]:
+        return [
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [1, 2]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=OptimalSolution(solution=(0.0, 3.0), value=6.0),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [2, 1]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 0], 40),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=UnboundedSolution(),
+            ),
+        ]
 
-    @pytest.fixture
-    def unbounded_problem(self) -> Problem:
-        return Problem(
-            objective=Objective(ObjectiveType.MAXIMIZE, [2, 1]),
-            constraints=[
-                Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),
-                Constraint(ConstraintType.LESS_EQUAL, [2, 0], 40),
-            ],
-            variables=[
-                Variable(VariableType.NON_NEGATIVE, "x", 1),
-                Variable(VariableType.NON_NEGATIVE, "x", 2),
-            ],
-        )
+    def test_solve(self, solver: StandardSimplex, problems: list[TestCase]):
+        for test_case in problems:
+            solution = solver.solve(test_case.problem)
 
-    def test_solve(
-        self, solver: StandardSimplex, problem: Problem, unbounded_problem: Problem
-    ):
-        solution = solver.solve(problem)
-
-        assert solution.type == SolutionType.OPTIMAL
-        assert solution.solution == pytest.approx((0.0, 3.0))  # type: ignore
-        assert solution.value == pytest.approx(6.0)  # type: ignore
-
-        unbounded_solution = solver.solve(unbounded_problem)
-        assert unbounded_solution.type == SolutionType.UNBOUNDED
+            assert solution.type == test_case.expected_solution.type
+            if solution.type == SolutionType.OPTIMAL:
+                assert solution.solution == pytest.approx(  # type: ignore
+                    test_case.expected_solution.solution  # type: ignore
+                )
+                assert solution.value == pytest.approx(  # type: ignore
+                    test_case.expected_solution.value  # type: ignore
+                )

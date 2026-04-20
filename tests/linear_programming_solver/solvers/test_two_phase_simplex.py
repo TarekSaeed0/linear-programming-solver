@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 from linear_programming_solver.problem import (
@@ -9,8 +11,22 @@ from linear_programming_solver.problem import (
     Variable,
     VariableType,
 )
-from linear_programming_solver.solution import SolutionType
+from linear_programming_solver.solution import (
+    InfeasibleSolution,
+    OptimalSolution,
+    Solution,
+    SolutionType,
+    UnboundedSolution,
+)
 from linear_programming_solver.solvers.two_phase_simplex import TwoPhaseSimplex
+
+
+@dataclass
+class TestCase:
+    __test__ = False
+
+    problem: Problem
+    expected_solution: Solution
 
 
 class TestTwoPhaseSimplex:
@@ -46,13 +62,76 @@ class TestTwoPhaseSimplex:
             ],
         )
 
-    def test_solve(
-        self, solver: TwoPhaseSimplex, problem: Problem, infeasible_problem: Problem
-    ):
-        solution = solver.solve(problem)
+    @pytest.fixture
+    def problems(self) -> list[TestCase]:
+        return [
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [1, 2]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=OptimalSolution(solution=(0.0, 3.0), value=6.0),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [4, 5]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 3], 6),
+                        Constraint(ConstraintType.GREATER_EQUAL, [3, 1], 3),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=OptimalSolution(solution=(3.0, 0.0), value=12.0),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [2, 1]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 0], 40),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=UnboundedSolution(),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [3, 2]),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [2, 1], 2),
+                        Constraint(ConstraintType.GREATER_EQUAL, [3, 4], 12),
+                    ],
+                    variables=[
+                        Variable(VariableType.NON_NEGATIVE, "x", 1),
+                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                    ],
+                ),
+                expected_solution=InfeasibleSolution(),
+            ),
+        ]
 
-        assert solution.type == SolutionType.OPTIMAL
-        assert solution.value == pytest.approx(12.0)  # type: ignore
+    def test_solve(self, solver: TwoPhaseSimplex, problems: list[TestCase]):
+        for test_case in problems:
+            solution = solver.solve(test_case.problem)
 
-        infeasible_solution = solver.solve(infeasible_problem)
-        assert infeasible_solution.type == SolutionType.INFEASIBLE
+            assert solution.type == test_case.expected_solution.type
+            if solution.type == SolutionType.OPTIMAL:
+                assert solution.solution == pytest.approx(  # type: ignore
+                    test_case.expected_solution.solution  # type: ignore
+                )
+                assert solution.value == pytest.approx(  # type: ignore
+                    test_case.expected_solution.value  # type: ignore
+                )
