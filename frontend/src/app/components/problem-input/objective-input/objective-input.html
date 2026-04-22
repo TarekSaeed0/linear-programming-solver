@@ -1,0 +1,8 @@
+<div class="flex gap-2">
+  <select>
+    @for (objectiveType of objectiveTypes; track objectiveType.value) {
+      <option [value]="objectiveType.value">{{ objectiveType.label }}</option>
+    }
+  </select>
+  <math-field class="min-w-40"></math-field>
+</div>
