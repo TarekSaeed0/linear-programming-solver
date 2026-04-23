@@ -24,6 +24,7 @@ class TwoPhaseSimplex(StandardSimplex):
         variables: list[Variable] = list(problem.variables)
         artificial_variables: list[int] = []
 
+        k = 1
         for i, constraint in enumerate(problem.constraints):
             if constraint.type in (ConstraintType.GREATER_EQUAL, ConstraintType.EQUAL):
                 objective_coefficients.append(1)
@@ -31,8 +32,12 @@ class TwoPhaseSimplex(StandardSimplex):
                 for j, constraint_coefficients in enumerate(constraints_coefficients):
                     constraint_coefficients.append(1 if i == j else 0)
 
-                # BUG: we assume that a variable with the name "w_{i + 1}" does not already exist, which may not be the case
-                variables.append(Variable(VariableType.NON_NEGATIVE, "w", i + 1))
+                while any(v.name == "w" and v.index == k for v in variables):
+                    k += 1
+
+                variables.append(Variable(VariableType.NON_NEGATIVE, "w", k))
+                k += 1
+
                 artificial_variables.append(len(variables) - 1)
 
         return artificial_variables, Problem(
