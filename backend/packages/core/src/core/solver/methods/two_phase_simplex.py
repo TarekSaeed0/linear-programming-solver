@@ -1,13 +1,10 @@
 import math
+from core.domain.constraint import Constraint, ConstraintType
+from core.domain.objective import Objective, ObjectiveType
+from core.domain.variable import Variable, VariableType
 from core.solver.methods.standard_simplex import StandardSimplex
 from core.domain.problem import (
-    Constraint,
-    ConstraintType,
-    Objective,
-    ObjectiveType,
     Problem,
-    Variable,
-    VariableType,
     VariablesMapper,
 )
 from core.domain.solution import (
