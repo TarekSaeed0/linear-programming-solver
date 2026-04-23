@@ -1,4 +1,10 @@
-from linear_programming_solver.solvers.two_phase_simplex import TwoPhaseSimplex
+from fastapi import FastAPI
+
+from api.dtos.solve_request_dto import SolveRequest
+from api.mappers.problem_mapper import ProblemMapper
+
+from linear_programming_solver.method_factory import MethodFactory
+from linear_programming_solver.methods.two_phase_simplex import TwoPhaseSimplex
 from linear_programming_solver.problem import (
     ObjectiveType,
     Objective,
@@ -8,6 +14,18 @@ from linear_programming_solver.problem import (
     Variable,
     Problem,
 )
+
+app = FastAPI()
+
+
+@app.post("/api/solve")
+def solve(request: SolveRequest):
+    try:
+        method = MethodFactory.create(request.method)
+        solution = method.solve(ProblemMapper.from_dto(request.problem))
+        return solution
+    except Exception as e:
+        return {"error": str(e)}
 
 
 def main():

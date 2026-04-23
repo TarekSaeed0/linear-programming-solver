@@ -3,7 +3,7 @@ from linear_programming_solver.problem import Problem
 from linear_programming_solver.solution import Solution
 
 
-class Solver(ABC):
+class Method(ABC):
     @abstractmethod
     def solve(self, problem: Problem) -> Solution:
         pass

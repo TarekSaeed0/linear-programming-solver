@@ -6,7 +6,10 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.14"
-dependencies = ["numpy>=2.4.4"]
+dependencies = [
+    "fastapi[standard]>=0.136.0",
+    "numpy>=2.4.4",
+]
 
 [project.urls]
 Repository = "https://github.com/TarekSaeed0/linear-programming-solver"

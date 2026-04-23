@@ -1,5 +1,5 @@
 import math
-from linear_programming_solver.solvers.standard_simplex import StandardSimplex
+from linear_programming_solver.methods.standard_simplex import StandardSimplex
 from linear_programming_solver.problem import (
     Constraint,
     ConstraintType,

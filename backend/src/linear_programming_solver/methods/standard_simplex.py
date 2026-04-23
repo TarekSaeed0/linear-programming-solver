@@ -1,5 +1,5 @@
 import numpy as np
-from linear_programming_solver.solver import Solver
+from linear_programming_solver.method import Method
 from linear_programming_solver.problem import Problem
 from linear_programming_solver.solution import (
     Solution,
@@ -8,7 +8,7 @@ from linear_programming_solver.solution import (
 from linear_programming_solver.tableau import Tableau
 
 
-class StandardSimplex(Solver):
+class StandardSimplex(Method):
     def pivot_column(self, tableau: Tableau) -> int:
         return tableau.data[-1, :-1].argmin().astype(int).item()
 

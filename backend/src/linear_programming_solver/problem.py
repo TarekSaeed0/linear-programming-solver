@@ -1,67 +1,11 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from enum import Enum
 import math
 import numpy as np
 
-
-class ObjectiveType(Enum):
-    MAXIMIZE = "maximize"
-    MINIMIZE = "minimize"
-
-
-@dataclass(frozen=True)
-class Objective:
-    type: ObjectiveType
-    coefficients: tuple[float, ...]
-
-    def __init__(
-        self, type: ObjectiveType, coefficients: tuple[float, ...] | list[float]
-    ):
-        object.__setattr__(self, "type", type)
-        object.__setattr__(self, "coefficients", tuple(coefficients))
-
-
-class ConstraintType(Enum):
-    LESS_EQUAL = "<="
-    GREATER_EQUAL = ">="
-    EQUAL = "="
-
-
-@dataclass(frozen=True)
-class Constraint:
-    type: ConstraintType
-    coefficients: tuple[float, ...]
-    constant: float
-
-    def __init__(
-        self,
-        type: ConstraintType,
-        coefficients: tuple[float, ...] | list[float],
-        constant: float,
-    ):
-        object.__setattr__(self, "type", type)
-        object.__setattr__(self, "coefficients", tuple(coefficients))
-        object.__setattr__(self, "constant", constant)
-
-
-class VariableType(Enum):
-    NON_NEGATIVE = "non-negative"
-    UNRESTRICTED = "unrestricted"
-
-
-@dataclass(frozen=True)
-class Variable:
-    type: VariableType
-    name: str
-
-    def __init__(self, type: VariableType, name: str, index: int | None = None):
-        subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-        if index is not None:
-            name += str(index).translate(subscript_table)
-
-        object.__setattr__(self, "type", type)
-        object.__setattr__(self, "name", name)
+from linear_programming_solver.constraint import Constraint, ConstraintType
+from linear_programming_solver.objective import Objective, ObjectiveType
+from linear_programming_solver.variable import Variable, VariableType
 
 
 @dataclass(frozen=True)
@@ -97,7 +41,7 @@ class Problem:
             len(constraint.coefficients) == len(variables) for constraint in constraints
         ), "Constraints coefficients must match number of variables"
 
-        assert len(set(variable.name for variable in variables)) == len(variables), (
+        assert len(set(str(variable) for variable in variables)) == len(variables), (
             "Variable names must be unique"
         )
 
@@ -192,10 +136,14 @@ class Problem:
                     constraints_coefficients[j].append(-constraint.coefficients[i])
 
                 variables.append(
-                    Variable(VariableType.NON_NEGATIVE, variable.name + "⁺")
+                    Variable(
+                        VariableType.NON_NEGATIVE, variable.name + "⁺", variable.index
+                    )
                 )
                 variables.append(
-                    Variable(VariableType.NON_NEGATIVE, variable.name + "⁻")
+                    Variable(
+                        VariableType.NON_NEGATIVE, variable.name + "⁻", variable.index
+                    )
                 )
 
                 mappings.append(lambda variables, i=i: variables[i] - variables[i + 1])
@@ -236,12 +184,12 @@ class Problem:
                 if not math.isclose(abs(coefficient), 1):
                     result += str(abs(coefficient))
 
-                result += self.variables[i].name
+                result += str(self.variables[i])
 
             return result if result else "0"
 
         non_negativity_constraint = ",".join(
-            variable.name
+            str(variable)
             for variable in self.variables
             if variable.type == VariableType.NON_NEGATIVE
         )
