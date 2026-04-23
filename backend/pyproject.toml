@@ -6,10 +6,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.14"
-dependencies = [
-    "fastapi[standard]>=0.136.0",
-    "numpy>=2.4.4",
-]
+dependencies = []
 
 [project.urls]
 Repository = "https://github.com/TarekSaeed0/linear-programming-solver"
@@ -23,3 +20,9 @@ extend-select = ["PL", "UP", "PERF", "RUF", "NPY"]
 
 [tool.coverage.report]
 exclude_lines = ["@abstractmethod", "__str__"]
+
+[tool.uv.workspace]
+members = ["packages/core", "apps/api"]
+
+[tool.pytest.ini_options]
+pythonpath = ["packages/core/src", "apps/api/src"]
