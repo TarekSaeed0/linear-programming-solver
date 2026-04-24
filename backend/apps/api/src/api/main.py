@@ -1,51 +1,45 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 
-from api.schemas.solve_request_schema import SolveRequestSchema
-from api.mappers.problem_mapper import ProblemMapper
+from core.exceptions import CoreError, InvalidProblemError, NotSolvableError
 
-from core.solver.method_factory import MethodFactory
-from core.solver.methods.two_phase_simplex import TwoPhaseSimplex
-from core.domain.problem import (
-    ObjectiveType,
-    Objective,
-    ConstraintType,
-    Constraint,
-    VariableType,
-    Variable,
-    Problem,
-)
+from api.routers import solve
 
 app = FastAPI()
 
 
-@app.post("/api/solve")
-def solve(request: SolveRequestSchema):
-    try:
-        method = MethodFactory.create(request.method)
-        solution = method.solve(ProblemMapper.from_schema(request.problem))
-        return solution
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def main():
-    problem = Problem(
-        objective=Objective(ObjectiveType.MAXIMIZE, [4, 5]),
-        constraints=[
-            Constraint(ConstraintType.LESS_EQUAL, [2, 3], 6),
-            Constraint(ConstraintType.GREATER_EQUAL, [3, 1], 3),
-        ],
-        variables=[
-            Variable(VariableType.NON_NEGATIVE, "x"),
-            Variable(VariableType.NON_NEGATIVE, "y"),
-        ],
+@app.exception_handler(InvalidProblemError)
+async def invalid_problem_exception_handler(
+    _request: Request, exc: InvalidProblemError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)}
     )
 
-    print(problem)
 
-    method = TwoPhaseSimplex()
-    print(method.solve(problem))
+@app.exception_handler(NotSolvableError)
+async def not_solvable_exception_handler(
+    _request: Request, exc: NotSolvableError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, content={"detail": str(exc)}
+    )
 
 
-if __name__ == "__main__":
-    main()
+@app.exception_handler(CoreError)
+async def core_exception_handler(_request: Request, exc: CoreError) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)}
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(
+    _request: Request, _exc: Exception
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=500, content={"detail": "An unexpected error occurred"}
+    )
+
+
+app.include_router(solve.router)

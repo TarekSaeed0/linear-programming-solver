@@ -1,4 +1,6 @@
 import numpy as np
+
+from core.exceptions import NotSolvableError
 from core.solver.method import Method
 from core.domain.problem import Problem
 from core.domain.solution import (
@@ -36,6 +38,14 @@ class StandardSimplex(Method):
             tableau.pivot(row, column)
 
     def solve(self, problem: Problem) -> Solution:
+        if any(
+            constraint.type != constraint.type.LESS_EQUAL
+            for constraint in problem.constraints
+        ):
+            raise NotSolvableError(
+                "Greater than or equal constraints are not supported by the standard simplex method"
+            )
+
         standard_problem = problem.to_standard_form()
         solution = self.solve_tableau(Tableau(standard_problem))
         return solution.map(standard_problem.variables_mapper)

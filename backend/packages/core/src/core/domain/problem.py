@@ -6,6 +6,11 @@ import numpy as np
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
 from core.domain.variable import Variable, VariableType
+from core.exceptions import (
+    ConstraintCoefficientsCountMismatchError,
+    DuplicateVariableError,
+    ObjectiveCoefficientsCountMismatchError,
+)
 
 
 @dataclass(frozen=True)
@@ -34,16 +39,22 @@ class Problem:
         variables: tuple[Variable, ...] | list[Variable],
         variables_mapper: VariablesMapper | None = None,
     ):
-        assert len(objective.coefficients) == len(variables), (
-            "Objective function coefficients must match number of variables"
-        )
-        assert all(
-            len(constraint.coefficients) == len(variables) for constraint in constraints
-        ), "Constraints coefficients must match number of variables"
+        if len(objective.coefficients) != len(variables):
+            raise ObjectiveCoefficientsCountMismatchError(
+                "The number of objective function coefficients must match the number of variables"
+            )
 
-        assert len(set(str(variable) for variable in variables)) == len(variables), (
-            "Variable names must be unique"
-        )
+        if not all(
+            len(constraint.coefficients) == len(variables) for constraint in constraints
+        ):
+            raise ConstraintCoefficientsCountMismatchError(
+                "The number of constraints coefficients must match the number of variables"
+            )
+
+        if len(set((variable.name, variable.index) for variable in variables)) != len(
+            variables
+        ):
+            raise DuplicateVariableError("Variable names must be unique")
 
         object.__setattr__(self, "objective", objective)
         object.__setattr__(self, "constraints", tuple(constraints))

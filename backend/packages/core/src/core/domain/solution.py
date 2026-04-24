@@ -50,7 +50,7 @@ class InfeasibleSolution:
         default=SolutionType.INFEASIBLE, init=False
     )
 
-    def map(self, variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
+    def map(self, _variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
         return self
 
     def __str__(self) -> str:

@@ -39,7 +39,7 @@ class Tableau:
 
         assert (
             len([x for x in self.pivots if x is not None]) == self.data.shape[0] - 1
-        ), "Basic variables must match number of constraints"
+        ), "The number of basic variables must match the number of constraints"
 
         for i, j in enumerate(self.pivots):
             self.data[-1] -= self.data[-1, j] * self.data[i]
@@ -55,8 +55,8 @@ class Tableau:
 
     def remove_variables(self, columns: list[int]):
         for column in columns:
-            assert column < self.data.shape[1] - 1, "Cannot remove the constant column"
-            assert column not in self.pivots, "Cannot remove a basic variable"
+            assert column < self.data.shape[1] - 1, "Can't remove the constant column"
+            assert column not in self.pivots, "Can't remove a basic variable"
 
         self.data = np.delete(self.data, columns, axis=1)
 
