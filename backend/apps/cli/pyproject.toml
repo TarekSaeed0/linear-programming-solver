@@ -1,0 +1,9 @@
+[project]
+name = "cli"
+version = "0.1.0"
+description = "Command line interface for solving linear programming problems"
+requires-python = ">=3.14"
+dependencies = ["core"]
+
+[tool.uv.sources]
+core = { workspace = true }
