@@ -199,15 +199,30 @@ class Problem:
 
             return result if result else "0"
 
-        non_negativity_constraint = ",".join(
-            str(variable)
-            for variable in self.variables
-            if variable.type == VariableType.NON_NEGATIVE
-        )
-        if non_negativity_constraint != "":
-            non_negativity_constraint = (
-                "\n           " + non_negativity_constraint + " >= 0"
-            )
+        variables_constraint = ""
+
+        group_type = None
+        group_start = 0
+        i = 0
+        while i < len(self.variables):
+            if group_type is None:
+                group_type = self.variables[i].type
+
+            if i == len(self.variables) - 1 or self.variables[i + 1].type != group_type:
+                if variables_constraint != "":
+                    variables_constraint += ", "
+                variables_constraint += ",".join(
+                    str(variable) for variable in self.variables[group_start : i + 1]
+                )
+                if group_type == VariableType.NON_NEGATIVE:
+                    variables_constraint += " >= 0"
+                elif group_type == VariableType.UNRESTRICTED:
+                    variables_constraint += " unrestricted"
+
+                group_type = None
+                group_start = i + 1
+
+            i += 1
 
         return (
             f"{self.objective.type.value} {polynomial_to_string(self.objective.coefficients)}"
@@ -217,5 +232,6 @@ class Problem:
                 f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
                 for constraint in self.constraints
             )
-            + non_negativity_constraint
+            + "\n           "
+            + variables_constraint
         )
