@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-import math
 import numpy as np
 
 from core.domain.constraint import Constraint, ConstraintType
@@ -178,60 +177,4 @@ class Problem:
             self.to_standard_objective()
             .to_standard_constraints()
             .to_standard_variables()
-        )
-
-    def __str__(self) -> str:
-        def polynomial_to_string(coefficients: tuple[float, ...]) -> str:
-            result = ""
-            for i, coefficient in enumerate(coefficients):
-                if coefficient == 0:
-                    continue
-
-                if result and coefficient > 0:
-                    result += " + "
-                elif coefficient < 0:
-                    result += " - "
-
-                if not math.isclose(abs(coefficient), 1):
-                    result += str(abs(coefficient))
-
-                result += str(self.variables[i])
-
-            return result if result else "0"
-
-        variables_constraint = ""
-
-        group_type = None
-        group_start = 0
-        i = 0
-        while i < len(self.variables):
-            if group_type is None:
-                group_type = self.variables[i].type
-
-            if i == len(self.variables) - 1 or self.variables[i + 1].type != group_type:
-                if variables_constraint != "":
-                    variables_constraint += ", "
-                variables_constraint += ",".join(
-                    str(variable) for variable in self.variables[group_start : i + 1]
-                )
-                if group_type == VariableType.NON_NEGATIVE:
-                    variables_constraint += " >= 0"
-                elif group_type == VariableType.UNRESTRICTED:
-                    variables_constraint += " unrestricted"
-
-                group_type = None
-                group_start = i + 1
-
-            i += 1
-
-        return (
-            f"{self.objective.type.value} {polynomial_to_string(self.objective.coefficients)}"
-            + "\n"
-            "subject to "
-            + "\n           ".join(
-                f"{polynomial_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
-                for constraint in self.constraints
-            )
-            + "\n           "
-            + variables_constraint
         )

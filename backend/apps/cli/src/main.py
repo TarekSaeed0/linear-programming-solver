@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import math
 import re
 
 from core.domain.constraint import Constraint, ConstraintType
@@ -141,6 +142,74 @@ def terms_to_coefficients(
     return coefficients
 
 
+def problem_to_string(problem: Problem) -> str:
+    def variable_to_string(variable: Variable) -> str:
+        if variable.index is not None:
+            subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+            return variable.name + str(variable.index).translate(subscript_table)
+
+        return variable.name
+
+    def coefficients_to_string(coefficients: tuple[float, ...]) -> str:
+        result = ""
+        for i, coefficient in enumerate(coefficients):
+            if coefficient == 0:
+                continue
+
+            if result and coefficient > 0:
+                result += " + "
+            elif coefficient < 0:
+                result += " - "
+
+            if not math.isclose(abs(coefficient), 1):
+                result += str(abs(coefficient))
+
+            result += variable_to_string(problem.variables[i])
+
+        return result if result else "0"
+
+    variables_constraint = ""
+
+    group_type = None
+    group_start = 0
+    i = 0
+    while i < len(problem.variables):
+        if group_type is None:
+            group_type = problem.variables[i].type
+
+        if (
+            i == len(problem.variables) - 1
+            or problem.variables[i + 1].type != group_type
+        ):
+            if variables_constraint != "":
+                variables_constraint += ", "
+            variables_constraint += ",".join(
+                variable_to_string(variable)
+                for variable in problem.variables[group_start : i + 1]
+            )
+            if group_type == VariableType.NON_NEGATIVE:
+                variables_constraint += " >= 0"
+            elif group_type == VariableType.UNRESTRICTED:
+                variables_constraint += " unrestricted"
+
+            group_type = None
+            group_start = i + 1
+
+        i += 1
+
+    return (
+        f"{problem.objective.type.value} {coefficients_to_string(problem.objective.coefficients)}"
+        + "\n"
+        "subject to "
+        + "\n           ".join(
+            f"{coefficients_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
+            for constraint in problem.constraints
+        )
+        + "\n           "
+        + variables_constraint
+    )
+
+
 def main():
     try:
         objective_string = input()
@@ -184,7 +253,7 @@ def main():
             objective=objective, constraints=constraints, variables=variables
         )
 
-        print(problem)
+        print(problem_to_string(problem))
 
     except ValueError as e:
         print(f"Error: {e}")
