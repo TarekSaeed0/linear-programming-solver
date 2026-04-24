@@ -22,7 +22,7 @@ extend-select = ["PL", "UP", "PERF", "RUF", "NPY"]
 exclude_lines = ["@abstractmethod", "__str__"]
 
 [tool.uv.workspace]
-members = ["packages/core", "apps/api"]
+members = ["packages/core", "apps/cli", "apps/api"]
 
 [tool.pytest.ini_options]
-pythonpath = ["packages/core/src", "apps/api/src"]
+pythonpath = ["packages/core/src", "apps/cli/src", "apps/api/src"]

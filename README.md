@@ -29,46 +29,57 @@
 
 ## Features
 
-- Solve linear programming problems using the Simplex method.
+- Solve linear programming problems using various methods.
+- Support for both equality and inequality constraints.
+- Support for both maximization and minimization problems.
+- Support for unrestricted variables.
+- Supports both Standard Simplex and Two-Phase Simplex methods.
 
 ## Building
 
-### Dependencies
+### Prerequisites
 
 - [Python](https://www.python.org/downloads/)
-- [pip](https://pip.pypa.io/en/stable/installation/)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
-Create a virtual environment:
-
-```sh
-python -m venv venv
-```
-
-Activate the environment, depending on your shell the command differs.
-
-in Bash:
+Clone the repository:
 
 ```bash
-source venv/bin/activate
+git clone https://github.com/TarekSaeed0/linear-programming-solver.git
 ```
 
-in Powershell:
+Navigate to the project directory:
 
-```ps1
-PS C:\> venv\Scripts\Activate.ps1
+```bash
+cd linear-programming-solver
 ```
 
-Install the dependencies:
+### Building Backend
 
-```sh
-pip install -r backend/requirements.txt
+Navigate to the backend directory:
+
+```bash
+cd backend
 ```
 
-Run the application:
+Install the dependencies using uv:
 
-```sh
-python main.py
+```bash
+uv sync --all-packages
 ```
+
+Run the backend server:
+
+```bash
+uv run apps/api/src/main.py
+```
+
+Or run CLI:
+
+```bash
+uv run apps/cli/src/main.py
+```
+
 
 ## License
 
