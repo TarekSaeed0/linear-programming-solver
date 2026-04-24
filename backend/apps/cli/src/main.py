@@ -5,7 +5,9 @@ import re
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
 from core.domain.problem import Problem
+from core.domain.solution import SolutionType
 from core.domain.variable import Variable, VariableType
+from core.solver.method_factory import MethodFactory, MethodName
 
 
 @dataclass(frozen=True)
@@ -142,13 +144,15 @@ def terms_to_coefficients(
     return coefficients
 
 
-def problem_to_string(problem: Problem) -> str:
-    def variable_to_string(variable: Variable) -> str:
-        if variable.index is not None:
-            subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-            return variable.name + str(variable.index).translate(subscript_table)
+def variable_to_string(variable: Variable) -> str:
+    if variable.index is not None:
+        subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+        return variable.name + str(variable.index).translate(subscript_table)
 
-        return variable.name
+    return variable.name
+
+
+def problem_to_string(problem: Problem) -> str:
 
     def coefficients_to_string(coefficients: tuple[float, ...]) -> str:
         result = ""
@@ -212,6 +216,7 @@ def problem_to_string(problem: Problem) -> str:
 
 def main():
     try:
+        print("Enter the problem:")
         objective_string = input()
         parsed_objective_type, parsed_objective_terms = parse_objective(
             objective_string
@@ -254,6 +259,36 @@ def main():
         )
 
         print(problem_to_string(problem))
+
+        methods: list[tuple[MethodName, str]] = [
+            (MethodName.STANDARD_SIMPLEX, "Standard Simplex"),
+            (MethodName.TWO_PHASE_SIMPLEX, "Two-Phase Simplex"),
+        ]
+
+        print("Choose the solution method:")
+        for i, (_, method_name) in enumerate(methods, start=1):
+            print(f"{i + 1}. {method_name}")
+
+        while True:
+            method_choice = int(input()) - 1
+            if method_choice < 0 or method_choice >= len(methods):
+                print(f"Error: {method_choice + 1} is not a valid choice")
+            else:
+                break
+
+        method = MethodFactory.create(methods[method_choice][0])
+
+        solution = method.solve(problem)
+        match solution.type:
+            case SolutionType.OPTIMAL:
+                print("Optimal value:", solution.value)
+                print("Optimal solution:")
+                for variable, value in zip(problem.variables, solution.solution):
+                    print(f"{variable_to_string(variable)} = {value}")
+            case SolutionType.INFEASIBLE:
+                print("The problem is infeasible")
+            case SolutionType.UNBOUNDED:
+                print("The problem is unbounded")
 
     except ValueError as e:
         print(f"Error: {e}")
