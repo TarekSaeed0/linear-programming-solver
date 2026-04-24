@@ -25,7 +25,6 @@ class StandardSimplex(Method):
 
     def solve_tableau(self, tableau: Tableau) -> Solution:
         while True:
-            print(tableau.data)
             column = self.pivot_column(tableau)
 
             if tableau.data[-1, column] >= 0:
