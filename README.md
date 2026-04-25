@@ -80,6 +80,70 @@ Or run CLI:
 uv run apps/cli/src/cli/main.py
 ```
 
+## Examples
+
+### Using core package
+
+```python
+from core.domain import (
+    Constraint,
+    ConstraintType,
+    Objective,
+    ObjectiveType,
+    Problem,
+    Variable,
+    VariableName,
+    VariableType,
+)
+from core.solver.methods.standard_simplex import StandardSimplex
+
+problem=Problem(
+    objective=Objective(ObjectiveType.MAXIMIZE, [1, 2]),
+    constraints=[
+        Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
+        Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
+    ],
+    variables=[
+        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
+        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+    ],
+)
+
+method = StandardSimplex()
+
+solution = method.solve(problem) # OptimalSolution(solution=(0.0, 3.0), value=6.0)
+```
+
+### Using CLI Application
+
+```bash
+uv run apps/cli/src/cli/main.py
+Enter the problem:
+minimize -2x_1 + 4x_2 + 7x_3 + x_4 + 5x_5
+subject to -x_1 + x_2 + 2x_3 + x_4 + 2x_5 = 7
+        -x_1 + 2x_2 + 3x_3 + x_4+ x_5 = 6
+        -x_1 + x_2 + x_3 + 2x_4 + x_5 = 4
+        x_1 unrestricted, x_2, x_3, x_4, x_5 >= 0
+
+minimize -2x₁ + 4x₂ + 7x₃ + x₄ + 5x₅
+subject to -x₁ + x₂ + 2x₃ + x₄ + 2x₅ = 7
+           -x₁ + 2x₂ + 3x₃ + x₄ + x₅ = 6
+           -x₁ + x₂ + x₃ + 2x₄ + x₅ = 4
+           x₁ unrestricted, x₂,x₃,x₄,x₅ >= 0
+
+1. Standard Simplex
+2. Two-Phase Simplex
+Choose the solution method: 2
+
+The problem has an optimal solution
+Optimal value: -19.0
+Optimal solution:
+x₁ = -1
+x₂ = 0
+x₃ = 1
+x₄ = 0
+x₅ = 2
+```
 
 ## License
 
