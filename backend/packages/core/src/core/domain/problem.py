@@ -4,7 +4,7 @@ import numpy as np
 
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
-from core.domain.variable import Variable, VariableType
+from core.domain.variable import Variable, VariableName, VariableType
 from core.exceptions import (
     ConstraintCoefficientsCountMismatchError,
     DuplicateVariableError,
@@ -50,9 +50,7 @@ class Problem:
                 "The number of constraints coefficients must match the number of variables"
             )
 
-        if len(set((variable.name, variable.index) for variable in variables)) != len(
-            variables
-        ):
+        if len(set(variable.name for variable in variables)) != len(variables):
             raise DuplicateVariableError("Variable names must be unique")
 
         object.__setattr__(self, "objective", objective)
@@ -162,7 +160,12 @@ class Problem:
                 for j, other_constraint in enumerate(constraints):
                     other_constraint.coefficients.append(coefficient if i == j else 0)
 
-                variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
+                variables.append(
+                    Variable(
+                        type=VariableType.NON_NEGATIVE,
+                        name=VariableName(name="s", index=i + 1),
+                    )
+                )
 
         return Problem(
             objective=Objective(
@@ -214,9 +217,10 @@ class Problem:
 
                     variables.append(
                         Variable(
-                            VariableType.NON_NEGATIVE,
-                            variable.name + "'",
-                            variable.index,
+                            type=VariableType.NON_NEGATIVE,
+                            name=VariableName(
+                                name=variable.name.name + "'", index=variable.name.index
+                            ),
                         )
                     )
 
@@ -229,16 +233,18 @@ class Problem:
 
                     variables.append(
                         Variable(
-                            VariableType.NON_NEGATIVE,
-                            variable.name + "⁺",
-                            variable.index,
+                            type=VariableType.NON_NEGATIVE,
+                            name=VariableName(
+                                name=variable.name.name + "⁺", index=variable.name.index
+                            ),
                         )
                     )
                     variables.append(
                         Variable(
-                            VariableType.NON_NEGATIVE,
-                            variable.name + "⁻",
-                            variable.index,
+                            type=VariableType.NON_NEGATIVE,
+                            name=VariableName(
+                                name=variable.name.name + "⁻", index=variable.name.index
+                            ),
                         )
                     )
 

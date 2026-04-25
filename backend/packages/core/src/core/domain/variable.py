@@ -9,12 +9,20 @@ class VariableType(Enum):
 
 
 @dataclass(frozen=True)
-class Variable:
-    type: VariableType
+class VariableName:
     name: str
     index: int | None = None
 
-    def __init__(self, type: VariableType, name: str, index: int | None = None):
-        object.__setattr__(self, "type", type)
+    def __init__(self, name: str, index: int | None = None):
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "index", index)
+
+
+@dataclass(frozen=True)
+class Variable:
+    type: VariableType
+    name: VariableName
+
+    def __init__(self, type: VariableType, name: VariableName):
+        object.__setattr__(self, "type", type)
+        object.__setattr__(self, "name", name)

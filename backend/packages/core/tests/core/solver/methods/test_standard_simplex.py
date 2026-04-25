@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
 from core.domain.problem import Problem
-from core.domain.variable import Variable, VariableType
+from core.domain.variable import Variable, VariableName, VariableType
 from core.domain.solution import (
     OptimalSolution,
     Solution,
@@ -39,8 +39,8 @@ class TestStandardSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
                     ],
                     variables=[
-                        Variable(VariableType.NON_NEGATIVE, "x", 1),
-                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
+                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
                     ],
                 ),
                 expected_solution=OptimalSolution(solution=(0.0, 3.0), value=6.0),
@@ -53,8 +53,8 @@ class TestStandardSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [2, 0], 40),
                     ],
                     variables=[
-                        Variable(VariableType.NON_NEGATIVE, "x", 1),
-                        Variable(VariableType.NON_NEGATIVE, "x", 2),
+                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
+                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
                     ],
                 ),
                 expected_solution=UnboundedSolution(),

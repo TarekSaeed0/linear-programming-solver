@@ -3,7 +3,7 @@ import pytest
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
 from core.domain.problem import Problem
-from core.domain.variable import Variable, VariableType
+from core.domain.variable import Variable, VariableName, VariableType
 
 
 class TestProblem:
@@ -16,8 +16,8 @@ class TestProblem:
                 Constraint(ConstraintType.GREATER_EQUAL, [2, 1], 4),
             ],
             variables=[
-                Variable(VariableType.NON_NEGATIVE, "x"),
-                Variable(VariableType.UNRESTRICTED, "y"),
+                Variable(VariableType.NON_NEGATIVE, VariableName("x")),
+                Variable(VariableType.UNRESTRICTED, VariableName("y")),
             ],
         )
 
@@ -36,10 +36,10 @@ class TestProblem:
                 Constraint(ConstraintType.EQUAL, [2, 1, -1, 0, -1], 4),
             ],
             variables=[
-                Variable(VariableType.NON_NEGATIVE, "x"),
-                Variable(VariableType.NON_NEGATIVE, "y⁺"),
-                Variable(VariableType.NON_NEGATIVE, "y⁻"),
-                Variable(VariableType.NON_NEGATIVE, "s", 1),
-                Variable(VariableType.NON_NEGATIVE, "s", 2),
+                Variable(VariableType.NON_NEGATIVE, VariableName("x")),
+                Variable(VariableType.NON_NEGATIVE, VariableName("y⁺")),
+                Variable(VariableType.NON_NEGATIVE, VariableName("y⁻")),
+                Variable(VariableType.NON_NEGATIVE, VariableName("s", 1)),
+                Variable(VariableType.NON_NEGATIVE, VariableName("s", 2)),
             ],
         )

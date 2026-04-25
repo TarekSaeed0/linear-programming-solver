@@ -29,9 +29,6 @@ class OptimalSolution:
             solution=variables_mapper.map(self.solution), value=self.value
         )
 
-    def __str__(self) -> str:
-        return f"Optimal solution: {self.solution}, value: {self.value}"
-
 
 @dataclass(frozen=True)
 class UnboundedSolution:
@@ -42,9 +39,6 @@ class UnboundedSolution:
     def map(self, variables_mapper: VariablesMapper | None) -> UnboundedSolution:
         return self
 
-    def __str__(self) -> str:
-        return "The solution is unbounded."
-
 
 @dataclass(frozen=True)
 class InfeasibleSolution:
@@ -54,9 +48,6 @@ class InfeasibleSolution:
 
     def map(self, _variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
         return self
-
-    def __str__(self) -> str:
-        return "The solution is infeasible."
 
 
 type Solution = OptimalSolution | UnboundedSolution | InfeasibleSolution

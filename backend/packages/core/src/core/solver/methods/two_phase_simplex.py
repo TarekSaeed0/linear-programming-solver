@@ -1,7 +1,7 @@
 import math
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
-from core.domain.variable import Variable, VariableType
+from core.domain.variable import Variable, VariableName, VariableType
 from core.solver.methods.standard_simplex import StandardSimplex
 from core.domain.problem import (
     Problem,
@@ -40,10 +40,13 @@ class TwoPhaseSimplex(StandardSimplex):
                 for j, other_constraint in enumerate(constraints):
                     other_constraint.coefficients.append(1 if i == j else 0)
 
-                while any(v.name == "w" and v.index == k for v in variables):
+                variable_name = VariableName(name="w", index=k)
+                while any(v.name == variable_name for v in variables):
                     k += 1
 
-                variables.append(Variable(VariableType.NON_NEGATIVE, "w", k))
+                variables.append(
+                    Variable(type=VariableType.NON_NEGATIVE, name=variable_name)
+                )
                 k += 1
 
                 artificial_variables.append(len(variables) - 1)
@@ -69,7 +72,9 @@ class TwoPhaseSimplex(StandardSimplex):
         )
 
     def solve(self, problem: Problem) -> Solution:
-        artificial_variables, artificial_problem = self.to_artificial(problem)
+        artificial_variables, artificial_problem = self.to_artificial(
+            problem.to_non_negative_constraints_constants()
+        )
 
         tableau = Tableau(artificial_problem.to_standard_form())
 
