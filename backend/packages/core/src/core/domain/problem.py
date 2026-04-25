@@ -73,20 +73,6 @@ class Problem:
             [constraint.constant for constraint in self.constraints], dtype=float
         )
 
-    def to_standard_objective(self) -> Problem:
-        if self.objective.type == ObjectiveType.MINIMIZE:
-            return self
-
-        return Problem(
-            Objective(
-                ObjectiveType.MINIMIZE,
-                tuple(-coefficient for coefficient in self.objective.coefficients),
-            ),
-            self.constraints,
-            self.variables,
-            variables_mapper=self.variables_mapper,
-        )
-
     @dataclass
     class _MutableObjective:
         type: ObjectiveType
@@ -98,17 +84,31 @@ class Problem:
         coefficients: list[float]
         constant: float
 
-    def to_standard_constraints(self) -> Problem:
-        objective = Problem._MutableObjective(
-            self.objective.type, list(self.objective.coefficients)
+    def to_minimization(self) -> Problem:
+        if self.objective.type == ObjectiveType.MINIMIZE:
+            return self
+
+        return Problem(
+            objective=Objective(
+                type=ObjectiveType.MINIMIZE,
+                coefficients=tuple(
+                    -coefficient for coefficient in self.objective.coefficients
+                ),
+            ),
+            constraints=self.constraints,
+            variables=self.variables,
+            variables_mapper=self.variables_mapper,
         )
+
+    def to_non_negative_constraints_constants(self) -> Problem:
         constraints = [
             Problem._MutableConstraint(
-                constraint.type, list(constraint.coefficients), constraint.constant
+                type=constraint.type,
+                coefficients=list(constraint.coefficients),
+                constant=constraint.constant,
             )
             for constraint in self.constraints
         ]
-        variables: list[Variable] = list(self.variables)
 
         for constraint in constraints:
             if constraint.constant < 0:
@@ -122,6 +122,34 @@ class Problem:
                 ]
 
                 constraint.constant = -constraint.constant
+
+        return Problem(
+            objective=self.objective,
+            constraints=[
+                Constraint(
+                    type=constraint.type,
+                    coefficients=tuple(constraint.coefficients),
+                    constant=constraint.constant,
+                )
+                for constraint in constraints
+            ],
+            variables=self.variables,
+            variables_mapper=self.variables_mapper,
+        )
+
+    def to_equality_constraints(self) -> Problem:
+        objective = Problem._MutableObjective(
+            type=self.objective.type, coefficients=list(self.objective.coefficients)
+        )
+        constraints = [
+            Problem._MutableConstraint(
+                type=constraint.type,
+                coefficients=list(constraint.coefficients),
+                constant=constraint.constant,
+            )
+            for constraint in self.constraints
+        ]
+        variables: list[Variable] = list(self.variables)
 
         for i, constraint in enumerate(constraints):
             if constraint.type != ConstraintType.EQUAL:
@@ -137,18 +165,20 @@ class Problem:
                 variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
 
         return Problem(
-            objective=Objective(objective.type, tuple(objective.coefficients)),
+            objective=Objective(
+                type=objective.type, coefficients=tuple(objective.coefficients)
+            ),
             constraints=[
                 Constraint(
-                    constraint.type,
-                    tuple(constraint.coefficients),
-                    constraint.constant,
+                    type=constraint.type,
+                    coefficients=tuple(constraint.coefficients),
+                    constant=constraint.constant,
                 )
                 for constraint in constraints
             ],
             variables=tuple(variables),
             variables_mapper=VariablesMapper(
-                tuple(
+                mappings=tuple(
                     lambda variables, i=i: variables[i]
                     for i in range(len(self.variables))
                 ),
@@ -156,7 +186,7 @@ class Problem:
             ),
         )
 
-    def to_standard_variables(self) -> Problem:
+    def to_non_negative_variables(self) -> Problem:
         objective = Problem._MutableObjective(self.objective.type, [])
         constraints = [
             Problem._MutableConstraint(constraint.type, [], constraint.constant)
@@ -217,22 +247,27 @@ class Problem:
                     )
 
         return Problem(
-            objective=Objective(objective.type, tuple(objective.coefficients)),
+            objective=Objective(
+                type=objective.type, coefficients=tuple(objective.coefficients)
+            ),
             constraints=[
                 Constraint(
-                    constraint.type, tuple(constraint.coefficients), constraint.constant
+                    type=constraint.type,
+                    coefficients=tuple(constraint.coefficients),
+                    constant=constraint.constant,
                 )
                 for constraint in constraints
             ],
             variables=tuple(variables),
             variables_mapper=VariablesMapper(
-                tuple(mappings), parent=self.variables_mapper
+                mappings=tuple(mappings), parent=self.variables_mapper
             ),
         )
 
     def to_standard_form(self) -> Problem:
         return (
-            self.to_standard_objective()
-            .to_standard_constraints()
-            .to_standard_variables()
+            self.to_minimization()
+            .to_non_negative_constraints_constants()
+            .to_equality_constraints()
+            .to_non_negative_variables()
         )

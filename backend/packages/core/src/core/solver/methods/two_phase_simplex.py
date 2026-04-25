@@ -17,20 +17,28 @@ from core.solver.tableau import Tableau
 
 class TwoPhaseSimplex(StandardSimplex):
     def to_artificial(self, problem: Problem) -> tuple[list[int], Problem]:
-        objective_coefficients: list[float] = [0] * len(problem.objective.coefficients)
-        constraints_coefficients: list[list[float]] = [
-            list(constraint.coefficients) for constraint in problem.constraints
+        objective = Problem._MutableObjective(  # pyright: ignore[reportPrivateUsage]
+            type=ObjectiveType.MINIMIZE,
+            coefficients=[0] * len(problem.objective.coefficients),
+        )
+        constraints = [
+            Problem._MutableConstraint(  # pyright: ignore[reportPrivateUsage]
+                type=constraint.type,
+                coefficients=list(constraint.coefficients),
+                constant=constraint.constant,
+            )
+            for constraint in problem.constraints
         ]
         variables: list[Variable] = list(problem.variables)
         artificial_variables: list[int] = []
 
         k = 1
-        for i, constraint in enumerate(problem.constraints):
+        for i, constraint in enumerate(constraints):
             if constraint.type in (ConstraintType.GREATER_EQUAL, ConstraintType.EQUAL):
-                objective_coefficients.append(1)
+                objective.coefficients.append(1)
 
-                for j, constraint_coefficients in enumerate(constraints_coefficients):
-                    constraint_coefficients.append(1 if i == j else 0)
+                for j, other_constraint in enumerate(constraints):
+                    other_constraint.coefficients.append(1 if i == j else 0)
 
                 while any(v.name == "w" and v.index == k for v in variables):
                     k += 1
@@ -41,16 +49,18 @@ class TwoPhaseSimplex(StandardSimplex):
                 artificial_variables.append(len(variables) - 1)
 
         return artificial_variables, Problem(
-            objective=Objective(ObjectiveType.MINIMIZE, tuple(objective_coefficients)),
+            objective=Objective(objective.type, tuple(objective.coefficients)),
             constraints=[
-                Constraint(constraint.type, tuple(coefficients), constraint.constant)
-                for constraint, coefficients in zip(
-                    problem.constraints, constraints_coefficients
+                Constraint(
+                    type=constraint.type,
+                    coefficients=tuple(constraint.coefficients),
+                    constant=constraint.constant,
                 )
+                for constraint in constraints
             ],
             variables=tuple(variables),
             variables_mapper=VariablesMapper(
-                tuple(
+                mappings=tuple(
                     lambda variables, i=i: variables[i]
                     for i in range(len(problem.variables))
                 ),

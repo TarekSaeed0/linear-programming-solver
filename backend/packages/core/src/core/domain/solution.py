@@ -25,7 +25,9 @@ class OptimalSolution:
     def map(self, variables_mapper: VariablesMapper | None) -> OptimalSolution:
         if variables_mapper is None:
             return self
-        return OptimalSolution(variables_mapper.map(self.solution), self.value)
+        return OptimalSolution(
+            solution=variables_mapper.map(self.solution), value=self.value
+        )
 
     def __str__(self) -> str:
         return f"Optimal solution: {self.solution}, value: {self.value}"
