@@ -48,7 +48,10 @@ def problem_to_string(problem: Problem) -> str:
             if result and coefficient > 0:
                 result += " + "
             elif coefficient < 0:
-                result += " - "
+                if result:
+                    result += " - "
+                else:
+                    result += "-"
 
             if not math.isclose(abs(coefficient), 1):
                 result += str(abs(coefficient))
