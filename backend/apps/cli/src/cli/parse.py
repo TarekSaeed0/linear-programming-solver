@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import re
 
-from core.domain.constraint import ConstraintType
-from core.domain.objective import ObjectiveType
+from core.domain.constraint import Constraint, ConstraintType
+from core.domain.objective import Objective, ObjectiveType
+from core.domain.problem import Problem
 from core.domain.variable import Variable, VariableName, VariableType
 
 
@@ -85,7 +86,9 @@ def parse_constraint(string: str) -> tuple[list[Term], ConstraintType, float]:
 def parse_variables(string: str) -> list[Variable]:
     variable_strings = [part.strip() for part in string.split(",")]
 
-    variable_pattern = re.compile(r"^([A-Za-z]+)(?:_(\d+))?\s*(unrestricted|>=\s*0)?$")
+    variable_pattern = re.compile(
+        r"^([A-Za-z]+)(?:_(\d+))?\s*(unrestricted|free|>=\s*0)?$"
+    )
 
     variables: list[Variable] = []
 
@@ -103,7 +106,7 @@ def parse_variables(string: str) -> list[Variable]:
 
         variable_type = None
         if variable_type_string is not None:
-            if variable_type_string == "unrestricted":
+            if variable_type_string in ("unrestricted", "free"):
                 variable_type = VariableType.UNRESTRICTED
             elif variable_type_string.replace(" ", "") == ">=0":
                 variable_type = VariableType.NON_NEGATIVE
@@ -124,3 +127,61 @@ def parse_variables(string: str) -> list[Variable]:
         raise ValueError("Each group of variables must end with unrestricted or >= 0")
 
     return variables
+
+
+def terms_to_coefficients(
+    terms: list[Term], variable_map: dict[VariableName, int]
+) -> list[float]:
+    coefficients = [0.0] * len(variable_map)
+    for term in terms:
+        if term.name not in variable_map:
+            raise ValueError(
+                f"Variable {term.name.name}_{term.name.index} is not defined"
+            )
+        variable_index = variable_map[term.name]
+        coefficients[variable_index] += term.coefficient
+    return coefficients
+
+
+def parse_problem(string: str) -> Problem:
+    lines = [line.strip() for line in string.strip().splitlines() if line.strip()]
+
+    if len(lines) < 2:  # noqa: PLR2004
+        raise ValueError(
+            "Problem must contain at least an objective and a variable declaration"
+        )
+
+    parsed_objective_type, parsed_objective_terms = parse_objective(lines[0])
+
+    if not lines[1].lower().startswith("subject to"):
+        raise ValueError('Constraints must start with "subject to"')
+
+    lines[1] = lines[1][10:].strip()
+    if lines[1] == "":
+        lines.pop(1)
+
+    parsed_constraints = list(map(parse_constraint, lines[1:-1]))
+
+    parsed_variables = parse_variables(lines[-1])
+
+    variable_map: dict[VariableName, int] = {
+        variable.name: i for i, variable in enumerate(parsed_variables)
+    }
+
+    objective = Objective(
+        type=parsed_objective_type,
+        coefficients=terms_to_coefficients(parsed_objective_terms, variable_map),
+    )
+
+    constraints = [
+        Constraint(
+            type=constraint_type,
+            coefficients=terms_to_coefficients(terms, variable_map),
+            constant=constant,
+        )
+        for terms, constraint_type, constant in parsed_constraints
+    ]
+
+    variables = parsed_variables
+
+    return Problem(objective, constraints, variables)

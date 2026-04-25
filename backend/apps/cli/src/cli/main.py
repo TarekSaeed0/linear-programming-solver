@@ -1,33 +1,14 @@
 import math
 
-from core.domain.constraint import Constraint, ConstraintType
-from core.domain.objective import Objective
 from core.domain.problem import Problem
 from core.domain.solution import SolutionType
-from core.domain.variable import Variable, VariableName, VariableType
+from core.domain.variable import Variable, VariableType
 from core.exceptions import CoreError
 from core.solver.method_factory import MethodFactory, MethodName
 
 from cli.parse import (
-    Term,
-    parse_constraint,
-    parse_objective,
-    parse_variables,
+    parse_problem,
 )
-
-
-def terms_to_coefficients(
-    terms: list[Term], variable_map: dict[VariableName, int]
-) -> list[float]:
-    coefficients = [0.0] * len(variable_map)
-    for term in terms:
-        if term.name not in variable_map:
-            raise ValueError(
-                f"Variable {term.name.name}_{term.name.index} is not defined"
-            )
-        variable_index = variable_map[term.name]
-        coefficients[variable_index] += term.coefficient
-    return coefficients
 
 
 def variable_to_string(variable: Variable) -> str:
@@ -54,7 +35,7 @@ def problem_to_string(problem: Problem) -> str:
                     result += "-"
 
             if not math.isclose(abs(coefficient), 1):
-                result += str(abs(coefficient))
+                result += f"{abs(coefficient):g}"
 
             result += variable_to_string(problem.variables[i])
 
@@ -94,7 +75,7 @@ def problem_to_string(problem: Problem) -> str:
         + "\n"
         "subject to "
         + "\n           ".join(
-            f"{coefficients_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant}"
+            f"{coefficients_to_string(constraint.coefficients)} {constraint.type.value} {constraint.constant:g}"
             for constraint in problem.constraints
         )
         + "\n           "
@@ -105,45 +86,14 @@ def problem_to_string(problem: Problem) -> str:
 def main():
     try:
         print("Enter the problem:")
-        objective_string = input()
-        parsed_objective_type, parsed_objective_terms = parse_objective(
-            objective_string
-        )
-
-        print("subject to")
-
-        parsed_constraints: list[tuple[list[Term], ConstraintType, float]] = []
+        input_string = ""
         while True:
-            constraint_string = input()
-            if constraint_string.endswith(","):
-                parsed_constraints.append(parse_constraint(constraint_string[:-1]))
-            else:
-                parsed_variables = parse_variables(constraint_string)
+            line = input()
+            if line.strip() == "":
                 break
+            input_string += line + "\n"
 
-        variable_map: dict[VariableName, int] = {
-            variable.name: i for i, variable in enumerate(parsed_variables)
-        }
-
-        objective = Objective(
-            type=parsed_objective_type,
-            coefficients=terms_to_coefficients(parsed_objective_terms, variable_map),
-        )
-
-        constraints = [
-            Constraint(
-                type=constraint_type,
-                coefficients=terms_to_coefficients(terms, variable_map),
-                constant=constant,
-            )
-            for terms, constraint_type, constant in parsed_constraints
-        ]
-
-        variables = parsed_variables
-
-        problem = Problem(
-            objective=objective, constraints=constraints, variables=variables
-        )
+        problem = parse_problem(input_string)
 
         print(problem_to_string(problem))
 
