@@ -82,7 +82,7 @@ uv run apps/cli/src/cli/main.py
 
 ## Examples
 
-### Using core package
+### Using Core Package
 
 ```python
 from core.domain import (
