@@ -71,13 +71,13 @@ uv sync --all-packages
 Run the backend server:
 
 ```bash
-uv run apps/api/src/main.py
+uv run apps/api/src/api/main.py
 ```
 
 Or run CLI:
 
 ```bash
-uv run apps/cli/src/main.py
+uv run apps/cli/src/cli/main.py
 ```
 
 
