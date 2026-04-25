@@ -4,3 +4,6 @@ version = "0.1.0"
 description = "Core library for solving linear programming problems"
 requires-python = ">=3.14"
 dependencies = ["numpy>=2.4.4"]
+
+[tool.uv]
+package = true

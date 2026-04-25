@@ -7,3 +7,6 @@ dependencies = ["fastapi[standard]>=0.136.0", "core"]
 
 [tool.uv.sources]
 core = { workspace = true }
+
+[tool.uv]
+package = true

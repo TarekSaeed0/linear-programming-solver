@@ -43,7 +43,7 @@ wheels = [
 [[package]]
 name = "api"
 version = "0.1.0"
-source = { virtual = "apps/api" }
+source = { editable = "apps/api" }
 dependencies = [
     { name = "core" },
     { name = "fastapi", extra = ["standard"] },
@@ -67,7 +67,7 @@ wheels = [
 [[package]]
 name = "cli"
 version = "0.1.0"
-source = { virtual = "apps/cli" }
+source = { editable = "apps/cli" }
 dependencies = [
     { name = "core" },
 ]
