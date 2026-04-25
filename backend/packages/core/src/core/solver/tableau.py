@@ -30,7 +30,7 @@ class Tableau:
         for i in range(self.data.shape[0] - 1):
             for j in range(self.data.shape[1] - 1):
                 if math.isclose(self.data[i, j], 1) and all(
-                    math.isclose(self.data[k, j], 0)
+                    math.isclose(self.data[k, j], 0, abs_tol=1e-9)
                     for k in range(self.data.shape[0] - 1)
                     if k != i
                 ):
@@ -53,10 +53,12 @@ class Tableau:
 
         self.pivots[row] = column
 
-    def remove_variables(self, columns: list[int]):
+    def remove_columns(self, columns: list[int]):
         for column in columns:
             assert column < self.data.shape[1] - 1, "Can't remove the constant column"
-            assert column not in self.pivots, "Can't remove a basic variable"
+            assert column not in self.pivots, (
+                "Can't remove the column of a basic variable"
+            )
 
         self.data = np.delete(self.data, columns, axis=1)
 
@@ -79,5 +81,5 @@ class Tableau:
 
         return OptimalSolution(
             solution=solution.tolist(),
-            value=self.data[-1, -1],
+            value=self.data[-1, -1].item(),
         )

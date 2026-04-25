@@ -16,7 +16,7 @@ from core.solver.tableau import Tableau
 
 
 class TwoPhaseSimplex(StandardSimplex):
-    def to_artificial(self, problem: Problem) -> tuple[list[int], Problem]:
+    def to_artificial(self, problem: Problem) -> tuple[list[Variable], Problem]:
         objective = Problem._MutableObjective(  # pyright: ignore[reportPrivateUsage]
             type=ObjectiveType.MINIMIZE,
             coefficients=[0] * len(problem.objective.coefficients),
@@ -30,7 +30,7 @@ class TwoPhaseSimplex(StandardSimplex):
             for constraint in problem.constraints
         ]
         variables: list[Variable] = list(problem.variables)
-        artificial_variables: list[int] = []
+        artificial_variables: list[Variable] = []
 
         k = 1
         for i, constraint in enumerate(constraints):
@@ -49,7 +49,7 @@ class TwoPhaseSimplex(StandardSimplex):
                 )
                 k += 1
 
-                artificial_variables.append(len(variables) - 1)
+                artificial_variables.append(variables[-1])
 
         return artificial_variables, Problem(
             objective=Objective(objective.type, tuple(objective.coefficients)),
@@ -76,16 +76,25 @@ class TwoPhaseSimplex(StandardSimplex):
             problem.to_non_negative_constraints_constants()
         )
 
-        tableau = Tableau(artificial_problem.to_standard_form())
+        artificial_problem = artificial_problem.to_standard_form()
+
+        tableau = Tableau(artificial_problem)
 
         solution = self.solve_tableau(tableau)
 
-        if solution.type != SolutionType.OPTIMAL or not math.isclose(solution.value, 0):
+        if solution.type != SolutionType.OPTIMAL or not math.isclose(
+            solution.value, 0, abs_tol=1e-9
+        ):
             return InfeasibleSolution()
 
-        standard_form = problem.to_standard_form()
+        tableau.remove_columns(
+            [
+                artificial_problem.variables.index(variable)
+                for variable in artificial_variables
+            ]
+        )
 
-        tableau.remove_variables(artificial_variables)
+        standard_form = problem.to_standard_form()
         tableau.replace_objective(standard_form.c())
 
         solution = self.solve_tableau(tableau)

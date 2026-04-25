@@ -27,11 +27,15 @@ class StandardSimplex(Method):
         while True:
             column = self.pivot_column(tableau)
 
-            if tableau.data[-1, column] >= 0:
+            if tableau.data[-1, column] >= 0 or np.isclose(
+                tableau.data[-1, column], 0, atol=1e-9
+            ):
                 return tableau.solution()
 
             row = self.pivot_row(tableau, column)
-            if tableau.data[row, column] <= 0:
+            if tableau.data[row, column] <= 0 or np.isclose(
+                tableau.data[row, column], 0, atol=1e-9
+            ):
                 return UnboundedSolution()
 
             tableau.pivot(row, column)
