@@ -4,6 +4,7 @@ from enum import Enum
 
 class VariableType(Enum):
     NON_NEGATIVE = "non-negative"
+    NON_POSITIVE = "non-positive"
     UNRESTRICTED = "unrestricted"
 
 

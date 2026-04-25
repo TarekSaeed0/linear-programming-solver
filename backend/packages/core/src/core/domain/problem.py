@@ -87,32 +87,64 @@ class Problem:
             variables_mapper=self.variables_mapper,
         )
 
+    @dataclass
+    class _MutableObjective:
+        type: ObjectiveType
+        coefficients: list[float]
+
+    @dataclass
+    class _MutableConstraint:
+        type: ConstraintType
+        coefficients: list[float]
+        constant: float
+
     def to_standard_constraints(self) -> Problem:
-        objective_coefficients: list[float] = list(self.objective.coefficients)
-        constraints_coefficients: list[list[float]] = [
-            list(constraint.coefficients) for constraint in self.constraints
+        objective = Problem._MutableObjective(
+            self.objective.type, list(self.objective.coefficients)
+        )
+        constraints = [
+            Problem._MutableConstraint(
+                constraint.type, list(constraint.coefficients), constraint.constant
+            )
+            for constraint in self.constraints
         ]
         variables: list[Variable] = list(self.variables)
 
-        for i, constraint in enumerate(self.constraints):
-            if constraint.type != ConstraintType.EQUAL:
-                objective_coefficients.append(0)
+        for constraint in constraints:
+            if constraint.constant < 0:
+                if constraint.type == ConstraintType.LESS_EQUAL:
+                    constraint.type = ConstraintType.GREATER_EQUAL
+                elif constraint.type == ConstraintType.GREATER_EQUAL:
+                    constraint.type = ConstraintType.LESS_EQUAL
 
+                constraint.coefficients = [
+                    -coefficient for coefficient in constraint.coefficients
+                ]
+
+                constraint.constant = -constraint.constant
+
+        for i, constraint in enumerate(constraints):
+            if constraint.type != ConstraintType.EQUAL:
                 coefficient = 1 if constraint.type == ConstraintType.LESS_EQUAL else -1
-                for j, constraint_coefficients in enumerate(constraints_coefficients):
-                    constraint_coefficients.append(coefficient if i == j else 0)
+
+                objective.coefficients.append(0)
+
+                constraint.type = ConstraintType.EQUAL
+
+                for j, other_constraint in enumerate(constraints):
+                    other_constraint.coefficients.append(coefficient if i == j else 0)
 
                 variables.append(Variable(VariableType.NON_NEGATIVE, "s", i + 1))
 
         return Problem(
-            objective=Objective(self.objective.type, tuple(objective_coefficients)),
+            objective=Objective(objective.type, tuple(objective.coefficients)),
             constraints=[
                 Constraint(
-                    ConstraintType.EQUAL, tuple(coefficients), constraint.constant
+                    constraint.type,
+                    tuple(constraint.coefficients),
+                    constraint.constant,
                 )
-                for constraint, coefficients in zip(
-                    self.constraints, constraints_coefficients
-                )
+                for constraint in constraints
             ],
             variables=tuple(variables),
             variables_mapper=VariablesMapper(
@@ -125,46 +157,72 @@ class Problem:
         )
 
     def to_standard_variables(self) -> Problem:
-        objective_coefficients: list[float] = []
-        constraints_coefficients: list[list[float]] = [[] for _ in self.constraints]
+        objective = Problem._MutableObjective(self.objective.type, [])
+        constraints = [
+            Problem._MutableConstraint(constraint.type, [], constraint.constant)
+            for constraint in self.constraints
+        ]
         variables: list[Variable] = []
         mappings: list[Callable[[tuple[float, ...]], float]] = []
 
         for i, variable in enumerate(self.variables):
-            objective_coefficients.append(self.objective.coefficients[i])
+            objective.coefficients.append(self.objective.coefficients[i])
 
             for j, constraint in enumerate(self.constraints):
-                constraints_coefficients[j].append(constraint.coefficients[i])
+                constraints[j].coefficients.append(constraint.coefficients[i])
 
-            if variable.type == VariableType.NON_NEGATIVE:
-                variables.append(variable)
-                mappings.append(lambda variables, i=i: variables[i])
-            else:
-                objective_coefficients.append(-self.objective.coefficients[i])
+            match variable.type:
+                case VariableType.NON_NEGATIVE:
+                    variables.append(variable)
 
-                for j, constraint in enumerate(self.constraints):
-                    constraints_coefficients[j].append(-constraint.coefficients[i])
+                    mappings.append(lambda variables, i=i: variables[i])
+                case VariableType.NON_POSITIVE:
+                    objective.coefficients[-1] *= -1
 
-                variables.append(
-                    Variable(
-                        VariableType.NON_NEGATIVE, variable.name + "⁺", variable.index
+                    for j, constraint in enumerate(self.constraints):
+                        constraints[j].coefficients[-1] *= -1
+
+                    variables.append(
+                        Variable(
+                            VariableType.NON_NEGATIVE,
+                            variable.name + "'",
+                            variable.index,
+                        )
                     )
-                )
-                variables.append(
-                    Variable(
-                        VariableType.NON_NEGATIVE, variable.name + "⁻", variable.index
-                    )
-                )
 
-                mappings.append(lambda variables, i=i: variables[i] - variables[i + 1])
+                    mappings.append(lambda variables, i=i: -variables[i])
+                case VariableType.UNRESTRICTED:
+                    objective.coefficients.append(-self.objective.coefficients[i])
+
+                    for j, constraint in enumerate(self.constraints):
+                        constraints[j].coefficients.append(-constraint.coefficients[i])
+
+                    variables.append(
+                        Variable(
+                            VariableType.NON_NEGATIVE,
+                            variable.name + "⁺",
+                            variable.index,
+                        )
+                    )
+                    variables.append(
+                        Variable(
+                            VariableType.NON_NEGATIVE,
+                            variable.name + "⁻",
+                            variable.index,
+                        )
+                    )
+
+                    mappings.append(
+                        lambda variables, i=i: variables[i] - variables[i + 1]
+                    )
 
         return Problem(
-            objective=Objective(self.objective.type, tuple(objective_coefficients)),
+            objective=Objective(objective.type, tuple(objective.coefficients)),
             constraints=[
-                Constraint(constraint.type, tuple(coefficients), constraint.constant)
-                for constraint, coefficients in zip(
-                    self.constraints, constraints_coefficients
+                Constraint(
+                    constraint.type, tuple(constraint.coefficients), constraint.constant
                 )
+                for constraint in constraints
             ],
             variables=tuple(variables),
             variables_mapper=VariablesMapper(
