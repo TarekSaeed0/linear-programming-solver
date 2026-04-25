@@ -18,10 +18,10 @@ class VariablesMapper:
     parent: VariablesMapper | None = None
 
     def map(self, variables: tuple[float, ...]) -> tuple[float, ...]:
-        variables = tuple(map(lambda f: f(variables), self.mappings))
+        mapped_variables = tuple(map(lambda f: f(variables), self.mappings))
         if self.parent is not None:
-            variables = self.parent.map(variables)
-        return variables
+            mapped_variables = self.parent.map(mapped_variables)
+        return mapped_variables
 
 
 @dataclass(frozen=True)
@@ -208,7 +208,9 @@ class Problem:
                 case VariableType.NON_NEGATIVE:
                     variables.append(variable)
 
-                    mappings.append(lambda variables, i=i: variables[i])
+                    mappings.append(
+                        lambda variables, i=len(variables) - 1: variables[i]
+                    )
                 case VariableType.NON_POSITIVE:
                     objective.coefficients[-1] *= -1
 
@@ -224,7 +226,9 @@ class Problem:
                         )
                     )
 
-                    mappings.append(lambda variables, i=i: -variables[i])
+                    mappings.append(
+                        lambda variables, i=len(variables) - 1: -variables[i]
+                    )
                 case VariableType.UNRESTRICTED:
                     objective.coefficients.append(-self.objective.coefficients[i])
 
@@ -249,7 +253,9 @@ class Problem:
                     )
 
                     mappings.append(
-                        lambda variables, i=i: variables[i] - variables[i + 1]
+                        lambda variables, i=len(variables) - 1: (
+                            variables[i - 1] - variables[i]
+                        )
                     )
 
         return Problem(
