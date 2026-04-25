@@ -96,32 +96,35 @@ def main():
         problem = parse_problem(input_string)
 
         print(problem_to_string(problem))
+        print()
 
         methods: list[tuple[MethodName, str]] = [
             (MethodName.STANDARD_SIMPLEX, "Standard Simplex"),
             (MethodName.TWO_PHASE_SIMPLEX, "Two-Phase Simplex"),
         ]
 
-        print("Choose the solution method:")
         for i, (_, method_name) in enumerate(methods, start=1):
             print(f"{i}. {method_name}")
 
         while True:
-            method_choice = int(input()) - 1
+            method_choice = int(input("Choose the solution method: ")) - 1
             if method_choice < 0 or method_choice >= len(methods):
                 print(f"Error: {method_choice + 1} is not a valid choice")
             else:
                 break
+
+        print()
 
         method = MethodFactory.create(methods[method_choice][0])
 
         solution = method.solve(problem)
         match solution.type:
             case SolutionType.OPTIMAL:
+                print("The problem has an optimal solution")
                 print("Optimal value:", solution.value)
                 print("Optimal solution:")
                 for variable, value in zip(problem.variables, solution.solution):
-                    print(f"{variable_to_string(variable)} = {value}")
+                    print(f"{variable_to_string(variable)} = {value:g}")
             case SolutionType.INFEASIBLE:
                 print("The problem is infeasible")
             case SolutionType.UNBOUNDED:
