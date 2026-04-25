@@ -1,7 +1,6 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ObjectiveType } from '../../../models/problem';
-import 'mathlive';
+import { ObjectiveType } from '../../../models/objective';
 
 @Component({
   selector: 'app-objective-input',

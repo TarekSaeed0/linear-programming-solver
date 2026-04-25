@@ -1,0 +1,86 @@
+<div [formGroup]="form" class="flex flex-col gap-2">
+  <div
+    class="grid gap-y-1.5 items-center justify-items-center w-fit"
+    [style.gridTemplateColumns]="'repeat(' + (variables().length * 3 + 2) + ', auto)'"
+  >
+    @for (i of constraintsCount() | range; track $index) {
+      <button
+        class="mr-2 px-1 h-full"
+        type="button"
+        title="Remove constraint"
+        (click)="removeConstraint(i)"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+      @for (j of variables().length | range; track $index) {
+        <input
+          #input
+          class="min-w-full h-fit"
+          type="text"
+          placeholder="0"
+          [formControl]="form.controls.coefficients.at(i).at(j)"
+          autoSizeInput
+          [extraWidth]="10"
+          (keydown)="onKeyDown(i, j, $event)"
+        />
+        <math class="ml-1">
+          <msub>
+            <mi>{{ variables()[j].name.name }}</mi>
+            @if (variables()[j].name.index !== null) {
+              <mn> {{ variables()[j].name.index }} </mn>
+            }
+          </msub>
+        </math>
+        @if (j < variables().length - 1) {
+          <math>
+            <mo>+</mo>
+          </math>
+        }
+      }
+      <select class="ml-1 mr-2">
+        @for (constraintType of constraintTypes; track constraintType.value) {
+          <option [value]="constraintType.value">
+            <span [innerHTML]="constraintType.label"></span>
+          </option>
+        }
+      </select>
+      <input
+        #input
+        class="min-w-full h-fit"
+        type="text"
+        placeholder="0"
+        [formControl]="form.controls.constants.at(i)"
+        autoSizeInput
+        [extraWidth]="10"
+        (keydown)="onKeyDown(i, variables().length, $event)"
+      />
+    }
+  </div>
+  <button
+    class="flex items-center gap-1"
+    type="button"
+    title="Add Constraint"
+    (click)="addConstraint()"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke-width="1.5"
+      stroke="currentColor"
+      class="size-4"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+    Constraint
+  </button>
+</div>

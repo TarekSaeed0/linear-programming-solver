@@ -6,7 +6,7 @@ export const VariableType = {
 
 export interface VariableName {
   name: string;
-  index: number;
+  index?: number;
 }
 
 export type VariableType = (typeof VariableType)[keyof typeof VariableType];

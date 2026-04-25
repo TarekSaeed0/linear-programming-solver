@@ -1,3 +1,7 @@
+math-field::part(menu-toggle) {
+  display: none;
+}
+
 math-field::part(virtual-keyboard-toggle) {
   display: none;
 }

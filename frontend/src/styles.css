@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer components {
   :root {
@@ -34,7 +34,7 @@
     overflow: hidden;
   }
 
-  input[type="text"],
+  input[type='text'],
   button,
   select {
     padding: 0.3rem 0.4rem;
@@ -51,7 +51,7 @@
     transition-duration: 200ms;
   }
 
-  input[type="text"]:focus,
+  input[type='text']:focus,
   select:active {
     border-bottom-color: var(--color-blue-500);
     box-shadow: var(--shadow-md);
@@ -76,31 +76,31 @@
     transform: translateY(0);
   }
 
-  input[type="text"]::placeholder,
-  input[type="text"]:disabled {
+  input[type='text']::placeholder,
+  input[type='text']:disabled {
     color: rgb(from currentColor r g b / 50%);
   }
 
-  input[type="text"]:disabled {
+  input[type='text']:disabled {
     cursor: not-allowed;
   }
 
-  input[type="text"].ng-invalid.ng-touched {
+  input[type='text'].ng-invalid.ng-touched {
     border-bottom-color: var(--color-red-600);
   }
 
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }
 
-  input[type="number"] {
+  input[type='number'] {
     -moz-appearance: textfield;
     appearance: textfield;
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     -webkit-appearance: none;
     appearance: none;
     display: grid;
@@ -117,13 +117,13 @@
     transition-duration: 200ms;
   }
 
-  input[type="checkbox"]:hover {
+  input[type='checkbox']:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
   }
 
-  input[type="checkbox"]::before {
-    content: "";
+  input[type='checkbox']::before {
+    content: '';
     width: 0.65em;
     height: 0.65em;
     transform: scale(0);
@@ -133,7 +133,7 @@
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
   }
 
-  input[type="checkbox"]:checked::before {
+  input[type='checkbox']:checked::before {
     transform: scale(1);
   }
 
@@ -147,5 +147,12 @@
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 16px;
+  }
+
+  math {
+    font-family: inherit;
+    font-style: inherit;
+    font-weight: inherit;
+    font-size: inherit;
   }
 }
