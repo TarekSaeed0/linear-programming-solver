@@ -78,24 +78,21 @@ class TwoPhaseSimplex(StandardSimplex):
 
         artificial_problem = artificial_problem.to_standard_form()
 
-        tableau = Tableau(artificial_problem)
-
-        solution = self.solve_tableau(tableau)
+        tableau, solution = self.solve_tableau(Tableau.from_problem(artificial_problem))
 
         if solution.type != SolutionType.OPTIMAL or not math.isclose(
             solution.value, 0, abs_tol=1e-9
         ):
             return InfeasibleSolution()
 
-        tableau.remove_columns(
+        standard_form = problem.to_standard_form()
+
+        tableau = tableau.without_columns(
             [
                 artificial_problem.variables.index(variable)
                 for variable in artificial_variables
             ]
-        )
+        ).with_objective(standard_form.c())
 
-        standard_form = problem.to_standard_form()
-        tableau.replace_objective(standard_form.c())
-
-        solution = self.solve_tableau(tableau)
+        _, solution = self.solve_tableau(tableau)
         return solution.map(standard_form.variables_mapper)

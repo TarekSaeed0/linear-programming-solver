@@ -23,22 +23,22 @@ class StandardSimplex(Method):
 
         return ratios.argmin().astype(int).item()
 
-    def solve_tableau(self, tableau: Tableau) -> Solution:
+    def solve_tableau(self, tableau: Tableau) -> tuple[Tableau, Solution]:
         while True:
             column = self.pivot_column(tableau)
 
             if tableau.data[-1, column] >= 0 or np.isclose(
                 tableau.data[-1, column], 0, atol=1e-9
             ):
-                return tableau.solution()
+                return tableau, tableau.solution()
 
             row = self.pivot_row(tableau, column)
             if tableau.data[row, column] <= 0 or np.isclose(
                 tableau.data[row, column], 0, atol=1e-9
             ):
-                return UnboundedSolution()
+                return tableau, UnboundedSolution()
 
-            tableau.pivot(row, column)
+            tableau = tableau.pivot(row, column)
 
     def solve(self, problem: Problem) -> Solution:
         if any(
@@ -50,5 +50,5 @@ class StandardSimplex(Method):
             )
 
         standard_problem = problem.to_standard_form()
-        solution = self.solve_tableau(Tableau(standard_problem))
+        _, solution = self.solve_tableau(Tableau.from_problem(standard_problem))
         return solution.map(standard_problem.variables_mapper)
