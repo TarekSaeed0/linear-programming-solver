@@ -6,7 +6,7 @@ from core.domain.solution import OptimalSolution, Solution
 
 class Tableau:
     data: np.ndarray
-    pivots: list[int | None]
+    pivots: list[int]
 
     def __init__(self, problem: Problem):
         self.data = np.vstack(
@@ -37,9 +37,9 @@ class Tableau:
                     self.pivots[i] = j
                     break
 
-        assert (
-            len([x for x in self.pivots if x is not None]) == self.data.shape[0] - 1
-        ), "The number of basic variables must match the number of constraints"
+        assert all([x is not None for x in self.pivots]), (
+            "The number of basic variables must match the number of constraints"
+        )
 
         for i, j in enumerate(self.pivots):
             self.data[-1] -= self.data[-1, j] * self.data[i]
@@ -60,6 +60,11 @@ class Tableau:
 
         self.data = np.delete(self.data, columns, axis=1)
 
+        for i in range(len(self.pivots)):
+            for column in columns:
+                if self.pivots[i] > column:
+                    self.pivots[i] -= 1
+
     def replace_objective(self, c: np.ndarray):
         self.data[-1, :-1] = c
 
@@ -70,8 +75,7 @@ class Tableau:
         solution = np.zeros(self.data.shape[1] - 1)
 
         for i in range(self.data.shape[0] - 1):
-            if self.pivots[i] is not None:
-                solution[self.pivots[i]] = self.data[i, -1]
+            solution[self.pivots[i]] = self.data[i, -1]
 
         return OptimalSolution(
             solution=solution.tolist(),
