@@ -1,0 +1,6 @@
+minimize 4x_1 + x_2 + x_3
+subject to 2x_1 + x_2 + 2x_3 = 4
+           3x_1 + 3x_2 + x_3 = 3
+           x_1, x_2, x_3 >= 0
+
+2
