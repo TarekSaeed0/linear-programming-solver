@@ -4,6 +4,8 @@ from typing import Literal
 
 from core.domain.problem import VariablesMapper
 from core.domain.step import Step
+from core.domain.variable import Variable
+from frozendict import frozendict
 
 
 class SolutionType(Enum):
@@ -15,18 +17,18 @@ class SolutionType(Enum):
 @dataclass(frozen=True)
 class OptimalSolution:
     type: Literal[SolutionType.OPTIMAL]
-    solution: tuple[float, ...]
+    solution: frozendict[Variable, float]
     value: float
     steps: tuple[Step, ...]
 
     def __init__(
         self,
-        solution: tuple[float, ...] | list[float],
+        solution: frozendict[Variable, float] | dict[Variable, float],
         value: float,
         steps: tuple[Step, ...] | list[Step] = (),
     ):
         object.__setattr__(self, "type", SolutionType.OPTIMAL)
-        object.__setattr__(self, "solution", tuple(solution))
+        object.__setattr__(self, "solution", frozendict(solution))
         object.__setattr__(self, "value", value)
         object.__setattr__(self, "steps", tuple(steps))
 

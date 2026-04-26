@@ -1,7 +1,7 @@
 from api.schemas.problem_schema import ProblemSchema
 from api.mappers.constraint_mapper import ConstraintMapper
 from api.mappers.objective_mapper import ObjectiveMapper
-from api.mappers.variable_mapper import VariableMapper
+from api.mappers.variable_mapper import VariableConstraintMapper
 from core.domain.problem import Problem
 
 
@@ -14,8 +14,9 @@ class ProblemMapper:
                 ConstraintMapper.to_schema(constraint)
                 for constraint in problem.constraints
             ],
-            variables=[
-                VariableMapper.to_schema(variable) for variable in problem.variables
+            variables_constraints=[
+                VariableConstraintMapper.to_schema(variable)
+                for variable in problem.variables_constraints
             ],
         )
 
@@ -27,7 +28,8 @@ class ProblemMapper:
                 ConstraintMapper.from_schema(constraint)
                 for constraint in schema.constraints
             ],
-            variables=[
-                VariableMapper.from_schema(variable) for variable in schema.variables
+            variables_constraints=[
+                VariableConstraintMapper.from_schema(variable)
+                for variable in schema.variables_constraints
             ],
         )

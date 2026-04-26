@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
+from frozendict import frozendict
 
 from core.domain.problem import Problem
 from core.domain.variable import Variable
-from core.solver.tableau import Tableau
+from core.domain.tableau import Tableau
 
 
 class StepType(Enum):
@@ -60,13 +61,13 @@ class InitialBasicSolutionStep(TableauStep):
     type: Literal[StepType.INITIAL_BASIC_SOLUTION] = field(
         default=StepType.INITIAL_BASIC_SOLUTION, init=False
     )
-    solution: tuple[float, ...]
+    solution: frozendict[Variable, float]
 
     def __init__(
         self,
-        solution: tuple[float, ...] | list[float],
+        solution: frozendict[Variable, float] | dict[Variable, float],
     ):
-        object.__setattr__(self, "solution", tuple(solution))
+        object.__setattr__(self, "solution", frozendict(solution))
 
 
 type Step = (

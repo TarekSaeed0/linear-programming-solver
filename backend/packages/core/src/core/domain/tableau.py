@@ -76,7 +76,12 @@ class Tableau:
             ]
         )
 
-        return Tableau(data=data, variables=problem.variables)
+        return Tableau(
+            data=data,
+            variables=[
+                constraint.variable for constraint in problem.variables_constraints
+            ],
+        )
 
     def pivot(self, row: int, column: int) -> Tableau:
         data = self.data.copy()

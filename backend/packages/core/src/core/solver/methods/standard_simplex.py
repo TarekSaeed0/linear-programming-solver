@@ -4,6 +4,7 @@ from core.domain.step import (
     StandardFormProblemStep,
     Step,
 )
+from frozendict import frozendict
 import numpy as np
 
 from core.exceptions import NotSolvableError
@@ -14,7 +15,7 @@ from core.domain.solution import (
     Solution,
     UnboundedSolution,
 )
-from core.solver.tableau import Tableau
+from core.domain.tableau import Tableau
 
 
 class StandardSimplex(Method):
@@ -47,7 +48,7 @@ class StandardSimplex(Method):
                     solution[tableau.basic_variables_indicies[i]] = tableau.data[i, -1]
 
                 return OptimalSolution(
-                    solution=solution.tolist(),
+                    solution=frozendict(zip(tableau.variables, solution.tolist())),
                     value=tableau.data[-1, -1].item(),
                     steps=steps,
                 ), tableau

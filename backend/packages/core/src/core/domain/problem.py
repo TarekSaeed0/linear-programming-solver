@@ -1,10 +1,15 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from frozendict import frozendict
 import numpy as np
 
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
-from core.domain.variable import Variable, VariableName, VariableType
+from core.domain.variable import (
+    VariableConstraint,
+    Variable,
+    VariableConstraintType,
+)
 from core.exceptions import (
     ConstraintCoefficientsCountMismatchError,
     DuplicateVariableError,
@@ -13,12 +18,34 @@ from core.exceptions import (
 
 
 @dataclass(frozen=True)
+class VariableMapping:
+    variable: Variable
+    mapping: Callable[[frozendict[Variable, float]], float]
+
+    def __init__(
+        self,
+        variable: Variable,
+        mapping: Callable[[frozendict[Variable, float]], float] | None = None,
+    ):
+        if mapping is None:
+            mapping = lambda variables: variables[variable]  # noqa: E731
+
+        object.__setattr__(self, "variable", variable)
+        object.__setattr__(self, "mapping", mapping)
+
+
+@dataclass(frozen=True)
 class VariablesMapper:
-    mappings: tuple[Callable[[tuple[float, ...]], float], ...]
+    mappings: tuple[VariableMapping, ...]
     parent: VariablesMapper | None = None
 
-    def map(self, variables: tuple[float, ...]) -> tuple[float, ...]:
-        mapped_variables = tuple(map(lambda f: f(variables), self.mappings))
+    def map(
+        self, variables: frozendict[Variable, float]
+    ) -> frozendict[Variable, float]:
+        mapped_variables: frozendict[Variable, float] = frozendict(
+            {mapping.variable: mapping.mapping(variables) for mapping in self.mappings}
+        )
+
         if self.parent is not None:
             mapped_variables = self.parent.map(mapped_variables)
         return mapped_variables
@@ -28,34 +55,38 @@ class VariablesMapper:
 class Problem:
     objective: Objective
     constraints: tuple[Constraint, ...]
-    variables: tuple[Variable, ...]
+    variables_constraints: tuple[VariableConstraint, ...]
     variables_mapper: VariablesMapper | None = field(compare=False)
 
     def __init__(
         self,
         objective: Objective,
         constraints: tuple[Constraint, ...] | list[Constraint],
-        variables: tuple[Variable, ...] | list[Variable],
+        variables_constraints: tuple[VariableConstraint, ...]
+        | list[VariableConstraint],
         variables_mapper: VariablesMapper | None = None,
     ):
-        if len(objective.coefficients) != len(variables):
+        if len(objective.coefficients) != len(variables_constraints):
             raise ObjectiveCoefficientsCountMismatchError(
                 "The number of objective function coefficients must match the number of variables"
             )
 
         if not all(
-            len(constraint.coefficients) == len(variables) for constraint in constraints
+            len(constraint.coefficients) == len(variables_constraints)
+            for constraint in constraints
         ):
             raise ConstraintCoefficientsCountMismatchError(
                 "The number of constraints coefficients must match the number of variables"
             )
 
-        if len(set(variable.name for variable in variables)) != len(variables):
+        if len(set(constraint.variable for constraint in variables_constraints)) != len(
+            variables_constraints
+        ):
             raise DuplicateVariableError("Variable names must be unique")
 
         object.__setattr__(self, "objective", objective)
         object.__setattr__(self, "constraints", tuple(constraints))
-        object.__setattr__(self, "variables", tuple(variables))
+        object.__setattr__(self, "variables_constraints", tuple(variables_constraints))
         object.__setattr__(self, "variables_mapper", variables_mapper)
 
     def c(self):
@@ -94,7 +125,7 @@ class Problem:
                 ),
             ),
             constraints=self.constraints,
-            variables=self.variables,
+            variables_constraints=self.variables_constraints,
             variables_mapper=self.variables_mapper,
         )
 
@@ -131,7 +162,7 @@ class Problem:
                 )
                 for constraint in constraints
             ],
-            variables=self.variables,
+            variables_constraints=self.variables_constraints,
             variables_mapper=self.variables_mapper,
         )
 
@@ -147,7 +178,9 @@ class Problem:
             )
             for constraint in self.constraints
         ]
-        variables: list[Variable] = list(self.variables)
+        variables_constraints: list[VariableConstraint] = list(
+            self.variables_constraints
+        )
 
         for i, constraint in enumerate(constraints):
             if constraint.type != ConstraintType.EQUAL:
@@ -160,10 +193,10 @@ class Problem:
                 for j, other_constraint in enumerate(constraints):
                     other_constraint.coefficients.append(coefficient if i == j else 0)
 
-                variables.append(
-                    Variable(
-                        type=VariableType.NON_NEGATIVE,
-                        name=VariableName(name="s", index=i + 1),
+                variables_constraints.append(
+                    VariableConstraint(
+                        type=VariableConstraintType.NON_NEGATIVE,
+                        variable=Variable(name="s", index=i + 1),
                     )
                 )
 
@@ -179,11 +212,11 @@ class Problem:
                 )
                 for constraint in constraints
             ],
-            variables=tuple(variables),
+            variables_constraints=tuple(variables_constraints),
             variables_mapper=VariablesMapper(
                 mappings=tuple(
-                    lambda variables, i=i: variables[i]
-                    for i in range(len(self.variables))
+                    VariableMapping(constraint.variable)
+                    for constraint in self.variables_constraints
                 ),
                 parent=self.variables_mapper,
             ),
@@ -195,66 +228,79 @@ class Problem:
             Problem._MutableConstraint(constraint.type, [], constraint.constant)
             for constraint in self.constraints
         ]
-        variables: list[Variable] = []
-        mappings: list[Callable[[tuple[float, ...]], float]] = []
+        variables_constraints: list[VariableConstraint] = []
+        mappings: list[VariableMapping] = []
 
-        for i, variable in enumerate(self.variables):
+        for i, variable_constraint in enumerate(self.variables_constraints):
             objective.coefficients.append(self.objective.coefficients[i])
 
             for j, constraint in enumerate(self.constraints):
                 constraints[j].coefficients.append(constraint.coefficients[i])
 
-            match variable.type:
-                case VariableType.NON_NEGATIVE:
-                    variables.append(variable)
+            match variable_constraint.type:
+                case VariableConstraintType.NON_NEGATIVE:
+                    variables_constraints.append(variable_constraint)
 
-                    mappings.append(
-                        lambda variables, i=len(variables) - 1: variables[i]
-                    )
-                case VariableType.NON_POSITIVE:
+                    mappings.append(VariableMapping(variable_constraint.variable))
+                case VariableConstraintType.NON_POSITIVE:
                     objective.coefficients[-1] *= -1
 
                     for j, constraint in enumerate(self.constraints):
                         constraints[j].coefficients[-1] *= -1
 
-                    variables.append(
-                        Variable(
-                            type=VariableType.NON_NEGATIVE,
-                            name=VariableName(
-                                name=variable.name.name + "'", index=variable.name.index
-                            ),
+                    negated_variable = Variable(
+                        name=variable_constraint.variable.name + "'",
+                        index=variable_constraint.variable.index,
+                    )
+                    variables_constraints.append(
+                        VariableConstraint(
+                            type=VariableConstraintType.NON_NEGATIVE,
+                            variable=negated_variable,
                         )
                     )
 
                     mappings.append(
-                        lambda variables, i=len(variables) - 1: -variables[i]
+                        VariableMapping(
+                            variable_constraint.variable,
+                            lambda variables: -variables[negated_variable],
+                        )
                     )
-                case VariableType.UNRESTRICTED:
+                case VariableConstraintType.UNRESTRICTED:
                     objective.coefficients.append(-self.objective.coefficients[i])
 
                     for j, constraint in enumerate(self.constraints):
                         constraints[j].coefficients.append(-constraint.coefficients[i])
 
-                    variables.append(
-                        Variable(
-                            type=VariableType.NON_NEGATIVE,
-                            name=VariableName(
-                                name=variable.name.name + "⁺", index=variable.name.index
-                            ),
+                    positive_part_variable = Variable(
+                        name=variable_constraint.variable.name + "⁺",
+                        index=variable_constraint.variable.index,
+                    )
+
+                    variables_constraints.append(
+                        VariableConstraint(
+                            type=VariableConstraintType.NON_NEGATIVE,
+                            variable=positive_part_variable,
                         )
                     )
-                    variables.append(
-                        Variable(
-                            type=VariableType.NON_NEGATIVE,
-                            name=VariableName(
-                                name=variable.name.name + "⁻", index=variable.name.index
-                            ),
+
+                    negative_part_variable = Variable(
+                        name=variable_constraint.variable.name + "⁻",
+                        index=variable_constraint.variable.index,
+                    )
+                    variables_constraints.append(
+                        VariableConstraint(
+                            type=VariableConstraintType.NON_NEGATIVE,
+                            variable=negative_part_variable,
                         )
                     )
 
                     mappings.append(
-                        lambda variables, i=len(variables) - 1: (
-                            variables[i - 1] - variables[i]
+                        VariableMapping(
+                            variable_constraint.variable,
+                            lambda variables: (
+                                variables[positive_part_variable]
+                                - variables[negative_part_variable]
+                            ),
                         )
                     )
 
@@ -270,7 +316,7 @@ class Problem:
                 )
                 for constraint in constraints
             ],
-            variables=tuple(variables),
+            variables_constraints=tuple(variables_constraints),
             variables_mapper=VariablesMapper(
                 mappings=tuple(mappings), parent=self.variables_mapper
             ),

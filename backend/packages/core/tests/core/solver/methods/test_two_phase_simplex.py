@@ -1,3 +1,4 @@
+from frozendict import frozendict
 import pytest
 
 from dataclasses import dataclass
@@ -12,7 +13,11 @@ from core.domain.solution import (
     SolutionType,
     UnboundedSolution,
 )
-from core.domain.variable import Variable, VariableName, VariableType
+from core.domain.variable import (
+    VariableConstraint,
+    Variable,
+    VariableConstraintType,
+)
 from core.solver.methods.two_phase_simplex import TwoPhaseSimplex
 
 
@@ -39,12 +44,19 @@ class TestTwoPhaseSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
                         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
                     ],
-                    variables=[
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
                     ],
                 ),
-                expected_solution=OptimalSolution(solution=(0.0, 3.0), value=6.0),
+                expected_solution=OptimalSolution(
+                    solution=frozendict({Variable("x", 1): 0.0, Variable("x", 2): 3.0}),
+                    value=6.0,
+                ),
             ),
             TestCase(
                 problem=Problem(
@@ -53,12 +65,19 @@ class TestTwoPhaseSimplex:
                         Constraint(ConstraintType.GREATER_EQUAL, [-1, -1], -3),
                         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
                     ],
-                    variables=[
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
                     ],
                 ),
-                expected_solution=OptimalSolution(solution=(0.0, 3.0), value=6.0),
+                expected_solution=OptimalSolution(
+                    solution=frozendict({Variable("x", 1): 0.0, Variable("x", 2): 3.0}),
+                    value=6.0,
+                ),
             ),
             TestCase(
                 problem=Problem(
@@ -67,12 +86,19 @@ class TestTwoPhaseSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [2, 3], 6),
                         Constraint(ConstraintType.GREATER_EQUAL, [3, 1], 3),
                     ],
-                    variables=[
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
                     ],
                 ),
-                expected_solution=OptimalSolution(solution=(3.0, 0.0), value=12.0),
+                expected_solution=OptimalSolution(
+                    solution=frozendict({Variable("x", 1): 3.0, Variable("x", 2): 0.0}),
+                    value=12.0,
+                ),
             ),
             TestCase(
                 problem=Problem(
@@ -81,9 +107,13 @@ class TestTwoPhaseSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),
                         Constraint(ConstraintType.LESS_EQUAL, [2, 0], 40),
                     ],
-                    variables=[
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
                     ],
                 ),
                 expected_solution=UnboundedSolution(),
@@ -95,9 +125,13 @@ class TestTwoPhaseSimplex:
                         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 2),
                         Constraint(ConstraintType.GREATER_EQUAL, [3, 4], 12),
                     ],
-                    variables=[
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-                        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
                     ],
                 ),
                 expected_solution=InfeasibleSolution(),

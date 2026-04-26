@@ -7,10 +7,15 @@ from core.domain.step import (
     StandardFormProblemStep,
     Step,
 )
-from core.domain.variable import Variable, VariableName, VariableType
+from core.domain.variable import (
+    VariableConstraint,
+    Variable,
+    VariableConstraintType,
+)
 from core.solver.methods.standard_simplex import StandardSimplex
 from core.domain.problem import (
     Problem,
+    VariableMapping,
     VariablesMapper,
 )
 from core.domain.solution import (
@@ -18,7 +23,7 @@ from core.domain.solution import (
     Solution,
     SolutionType,
 )
-from core.solver.tableau import Tableau
+from core.domain.tableau import Tableau
 
 
 class TwoPhaseSimplex(StandardSimplex):
@@ -39,7 +44,9 @@ class TwoPhaseSimplex(StandardSimplex):
             )
             for constraint in standard_form_problem.constraints
         ]
-        variables: list[Variable] = list(standard_form_problem.variables)
+        variables_constraints: list[VariableConstraint] = list(
+            standard_form_problem.variables_constraints
+        )
         artificial_variables: list[Variable] = []
 
         k = 1
@@ -53,16 +60,22 @@ class TwoPhaseSimplex(StandardSimplex):
                 for j, other_constraint in enumerate(constraints):
                     other_constraint.coefficients.append(1 if i == j else 0)
 
-                variable_name = VariableName(name="w", index=k)
-                while any(v.name == variable_name for v in variables):
+                artificial_variable = Variable(name="w", index=k)
+                while any(
+                    constraint.variable == artificial_variable
+                    for constraint in variables_constraints
+                ):
                     k += 1
 
-                variables.append(
-                    Variable(type=VariableType.NON_NEGATIVE, name=variable_name)
+                variables_constraints.append(
+                    VariableConstraint(
+                        type=VariableConstraintType.NON_NEGATIVE,
+                        variable=artificial_variable,
+                    )
                 )
                 k += 1
 
-                artificial_variables.append(variables[-1])
+                artificial_variables.append(artificial_variable)
 
         return artificial_variables, Problem(
             objective=Objective(objective.type, tuple(objective.coefficients)),
@@ -74,13 +87,12 @@ class TwoPhaseSimplex(StandardSimplex):
                 )
                 for constraint in constraints
             ],
-            variables=tuple(variables),
+            variables_constraints=tuple(variables_constraints),
             variables_mapper=VariablesMapper(
                 mappings=tuple(
-                    lambda variables, i=i: variables[i]
-                    for i in range(len(problem.variables))
-                ),
-                parent=problem.variables_mapper,
+                    VariableMapping(constraint.variable)
+                    for constraint in standard_form_problem.variables_constraints
+                )
             ),
         )
 
@@ -104,7 +116,11 @@ class TwoPhaseSimplex(StandardSimplex):
         ):
             return InfeasibleSolution(steps)
 
-        steps.append(InitialBasicSolutionStep(solution.solution))
+        steps.append(
+            InitialBasicSolutionStep(
+                solution.map(artificial_problem.variables_mapper).solution
+            )
+        )
 
         tableau = tableau.without_variables(artificial_variables).with_objective(
             standard_form_problem.c()
