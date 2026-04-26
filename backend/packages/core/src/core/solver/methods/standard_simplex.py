@@ -52,3 +52,27 @@ class StandardSimplex(Method):
         standard_problem = problem.to_standard_form()
         _, solution = self.solve_tableau(Tableau.from_problem(standard_problem))
         return solution.map(standard_problem.variables_mapper)
+
+    def solve_with_steps(self, problem: Problem) -> list[Step]:
+     steps = []
+    
+     standard_problem = problem.to_standard_form()
+     tableau = Tableau.from_problem(standard_problem)
+    
+     steps.append(InitialTableauStep(tableau=tableau))
+    
+     while True:
+        column = self.pivot_column(tableau)
+
+        if tableau.data[-1, column] >= 0 or np.isclose(tableau.data[-1, column], 0, atol=1e-9):
+            solution = tableau.solution().map(standard_problem.variables_mapper)
+            steps.append(SolutionStep(tableau=tableau, solution=solution))
+            return steps
+
+        row = self.pivot_row(tableau, column)
+        if tableau.data[row, column] <= 0 or np.isclose(tableau.data[row, column], 0, atol=1e-9):
+            steps.append(SolutionStep(tableau=tableau, solution=UnboundedSolution()))
+            return steps
+
+        tableau = tableau.pivot(row, column)
+        steps.append(PivotTableauStep(tableau=tableau, row=row, column=column))

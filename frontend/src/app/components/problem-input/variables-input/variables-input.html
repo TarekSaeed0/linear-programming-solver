@@ -1,0 +1,36 @@
+<div class="flex flex-col gap-2">
+  @for (variable of variables(); track variable.name.index; let i = $index) {
+    <div class="flex items-center gap-3">
+      <math class="w-6 text-center text-lg font-semibold">
+        <msub>
+          <mi>{{ variable.name.name }}</mi>
+          @if (variable.name.index !== null) {
+            <mn>{{ variable.name.index }}</mn>
+          }
+        </msub>
+      </math>
+
+      <select class="p-1 border rounded bg-white shadow-sm" (change)="onTypeChange(i, $event)">
+        @for (type of variableTypes; track type.value) {
+          <option [value]="type.value" [selected]="type.value === variable.type">
+            {{ type.label }}
+          </option>
+        }
+      </select>
+
+      @if (variables().length > 1) {
+        <button 
+          class="px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors" 
+          (click)="removeVariable(i)">
+          Remove
+        </button>
+      }
+    </div>
+  }
+  
+  <button 
+    class="mt-2 w-fit px-3 py-1.5 bg-blue-500 text-white font-medium rounded hover:bg-blue-600 transition-colors" 
+    (click)="addVariable()">
+    + Add Variable
+  </button>
+</div>

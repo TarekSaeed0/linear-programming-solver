@@ -13,7 +13,8 @@
     </div>
     <div>
       <h2 class="text-lg font-semibold mb-1">Variables</h2>
-      <!-- TODO: Add variables input component here -->
-    </div>
+      <app-variables-input 
+        [variables]="variables" 
+        (variablesChange)="onVariablesChange($event)" />    </div>
   </div>
 </main>
