@@ -1,6 +1,12 @@
 import math
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
+from core.domain.step import (
+    ArtificialProblemStep,
+    InitialBasicSolutionStep,
+    StandardFormProblemStep,
+    Step,
+)
 from core.domain.variable import Variable, VariableName, VariableType
 from core.solver.methods.standard_simplex import StandardSimplex
 from core.domain.problem import (
@@ -16,10 +22,14 @@ from core.solver.tableau import Tableau
 
 
 class TwoPhaseSimplex(StandardSimplex):
-    def to_artificial(self, problem: Problem) -> tuple[list[Variable], Problem]:
+    def to_artificial(
+        self, problem: Problem, standard_form_problem: Problem
+    ) -> tuple[list[Variable], Problem]:
+        problem = problem.to_non_negative_constraints_constants()
+
         objective = Problem._MutableObjective(  # pyright: ignore[reportPrivateUsage]
             type=ObjectiveType.MINIMIZE,
-            coefficients=[0] * len(problem.objective.coefficients),
+            coefficients=[0] * len(standard_form_problem.objective.coefficients),
         )
         constraints = [
             Problem._MutableConstraint(  # pyright: ignore[reportPrivateUsage]
@@ -27,14 +37,17 @@ class TwoPhaseSimplex(StandardSimplex):
                 coefficients=list(constraint.coefficients),
                 constant=constraint.constant,
             )
-            for constraint in problem.constraints
+            for constraint in standard_form_problem.constraints
         ]
-        variables: list[Variable] = list(problem.variables)
+        variables: list[Variable] = list(standard_form_problem.variables)
         artificial_variables: list[Variable] = []
 
         k = 1
-        for i, constraint in enumerate(constraints):
-            if constraint.type in (ConstraintType.GREATER_EQUAL, ConstraintType.EQUAL):
+        for i, constraint in enumerate(problem.constraints):
+            if constraint.type in (
+                ConstraintType.GREATER_EQUAL,
+                ConstraintType.EQUAL,
+            ):
                 objective.coefficients.append(1)
 
                 for j, other_constraint in enumerate(constraints):
@@ -72,27 +85,34 @@ class TwoPhaseSimplex(StandardSimplex):
         )
 
     def solve(self, problem: Problem) -> Solution:
+        steps: list[Step] = []
+
+        standard_form_problem = problem.to_standard_form()
+        steps.append(StandardFormProblemStep(standard_form_problem))
+
         artificial_variables, artificial_problem = self.to_artificial(
-            problem.to_non_negative_constraints_constants()
+            problem, standard_form_problem
         )
+        steps.append(ArtificialProblemStep(artificial_problem))
 
-        artificial_problem = artificial_problem.to_standard_form()
-
-        tableau, solution = self.solve_tableau(Tableau.from_problem(artificial_problem))
+        solution, tableau = self.solve_tableau(
+            Tableau.from_problem(artificial_problem), steps
+        )
 
         if solution.type != SolutionType.OPTIMAL or not math.isclose(
             solution.value, 0, abs_tol=1e-9
         ):
-            return InfeasibleSolution()
+            return InfeasibleSolution(steps)
 
-        standard_form = problem.to_standard_form()
+        steps.append(InitialBasicSolutionStep(solution.solution))
 
         tableau = tableau.without_columns(
             [
                 artificial_problem.variables.index(variable)
                 for variable in artificial_variables
             ]
-        ).with_objective(standard_form.c())
+        ).with_objective(standard_form_problem.c())
 
-        _, solution = self.solve_tableau(tableau)
-        return solution.map(standard_form.variables_mapper)
+        solution, _ = self.solve_tableau(tableau, steps)
+
+        return solution.map(standard_form_problem.variables_mapper)

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import math
 import numpy as np
 from core.domain.problem import Problem
-from core.domain.solution import OptimalSolution, Solution
 
 
 @dataclass(frozen=True)
@@ -114,14 +113,3 @@ class Tableau:
             data[-1] -= data[-1, j] * data[i]
 
         return Tableau(data=data, pivots=self.pivots)
-
-    def solution(self) -> Solution:
-        solution = np.zeros(self.data.shape[1] - 1)
-
-        for i in range(self.data.shape[0] - 1):
-            solution[self.pivots[i]] = self.data[i, -1]
-
-        return OptimalSolution(
-            solution=solution.tolist(),
-            value=self.data[-1, -1].item(),
-        )
