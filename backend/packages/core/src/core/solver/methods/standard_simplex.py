@@ -44,11 +44,12 @@ class StandardSimplex(Method):
                 solution = np.zeros(tableau.data.shape[1] - 1)
 
                 for i in range(tableau.data.shape[0] - 1):
-                    solution[tableau.pivots[i]] = tableau.data[i, -1]
+                    solution[tableau.basic_variables_indicies[i]] = tableau.data[i, -1]
 
                 return OptimalSolution(
                     solution=solution.tolist(),
                     value=tableau.data[-1, -1].item(),
+                    steps=steps,
                 ), tableau
 
             row = self.pivot_row(tableau, column)
@@ -57,9 +58,12 @@ class StandardSimplex(Method):
             ):
                 return UnboundedSolution(steps), tableau
 
+            entering_variable = tableau.variables[column]
+            leaving_variable = tableau.variables[tableau.basic_variables_indicies[row]]
+
             tableau = tableau.pivot(row, column)
 
-            steps.append(PivotTableauStep(tableau, row, column))
+            steps.append(PivotTableauStep(tableau, entering_variable, leaving_variable))
 
     def solve(self, problem: Problem) -> Solution:
         steps: list[Step] = []

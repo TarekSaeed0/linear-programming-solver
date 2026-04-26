@@ -2,6 +2,7 @@ import math
 
 from core.domain.problem import Problem
 from core.domain.solution import SolutionType
+from core.domain.step import StepType
 from core.domain.variable import Variable, VariableType
 from core.exceptions import CoreError
 from core.solver.method_factory import MethodFactory, MethodName
@@ -9,6 +10,7 @@ from core.solver.method_factory import MethodFactory, MethodName
 from cli.parse import (
     parse_problem,
 )
+from core.solver.tableau import Tableau
 
 
 def variable_to_string(variable: Variable) -> str:
@@ -83,6 +85,10 @@ def problem_to_string(problem: Problem) -> str:
     )
 
 
+def tableau_to_string(tableau: Tableau) -> str:
+    return str(tableau.data)
+
+
 def main():
     try:
         print("Enter the problem:")
@@ -129,6 +135,29 @@ def main():
                 print("The problem is infeasible")
             case SolutionType.UNBOUNDED:
                 print("The problem is unbounded")
+
+        print()
+
+        print("Steps")
+        for step in solution.steps:
+            match step.type:
+                case StepType.STANDARD_FORM_PROBLEM:
+                    print("Converted to standard form:")
+                    print(problem_to_string(step.problem))
+                case StepType.ARTIFICIAL_PROBLEM:
+                    print("Added artificial variables and changed objective function:")
+                    print(problem_to_string(step.problem))
+                    pass
+                case StepType.INITIAL_TABLEAU:
+                    print("Initial tableau:")
+                    print(tableau_to_string(step.tableau))
+                case StepType.PIVOT_TABLEAU:
+                    print(
+                        f"Pivoting tableau with entering variable {variable_to_string(step.entering_variable)} and leaving variable {variable_to_string(step.leaving_variable)}:"
+                    )
+                    print(tableau_to_string(step.tableau))
+                case StepType.INITIAL_BASIC_SOLUTION:
+                    pass
     except (CoreError, ValueError) as e:
         print(f"Error: {e}")
 

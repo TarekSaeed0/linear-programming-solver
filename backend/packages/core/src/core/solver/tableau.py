@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import math
+from core.domain.variable import Variable
 import numpy as np
 from core.domain.problem import Problem
 
@@ -7,25 +8,30 @@ from core.domain.problem import Problem
 @dataclass(frozen=True)
 class Tableau:
     data: np.ndarray
-    pivots: tuple[int, ...]
+    variables: tuple[Variable, ...]
+    basic_variables_indicies: tuple[int, ...]
 
     def __init__(
-        self, data: np.ndarray, pivots: tuple[int, ...] | list[int] | None = None
+        self,
+        data: np.ndarray,
+        variables: tuple[Variable, ...] | list[Variable],
+        basic_variables_indicies: tuple[int, ...] | list[int] | None = None,
     ):
-
-        if pivots is not None:
-            assert len(pivots) == data.shape[0] - 1, (
-                "The number of pivots must match the number of constraints"
+        if basic_variables_indicies is not None:
+            assert len(basic_variables_indicies) == data.shape[0] - 1, (
+                "The number of basic variables must match the number of constraints"
             )
 
-            assert all(0 <= pivot < data.shape[1] - 1 for pivot in pivots), (
-                "Pivots must be valid column indices"
-            )
+            assert all(
+                0 <= pivot < data.shape[1] - 1 for pivot in basic_variables_indicies
+            ), "basic variables must be valid column indices"
 
-            assert len(set(pivots)) == len(pivots), "Pivots must be unique"
+            assert len(set(basic_variables_indicies)) == len(
+                basic_variables_indicies
+            ), "basic variables must be unique"
         else:
-            pivots = [None] * (data.shape[0] - 1)
-            assert type(pivots) is list
+            basic_variables_indicies = [None] * (data.shape[0] - 1)
+            assert type(basic_variables_indicies) is list
             for i in range(data.shape[0] - 1):
                 for j in range(data.shape[1] - 1):
                     if math.isclose(data[i, j], 1) and all(
@@ -33,20 +39,23 @@ class Tableau:
                         for k in range(data.shape[0] - 1)
                         if k != i
                     ):
-                        pivots[i] = j
+                        basic_variables_indicies[i] = j
                         break
 
-            assert all([x is not None for x in pivots]), (
-                "The number of pivots must match the number of constraints"
+            assert all([x is not None for x in basic_variables_indicies]), (
+                "The number of basic variables must match the number of constraints"
             )
 
-        for i, j in enumerate(pivots):
+        for i, j in enumerate(basic_variables_indicies):
             data[-1] -= data[-1, j] * data[i]
 
         data.setflags(write=False)
 
         object.__setattr__(self, "data", data)
-        object.__setattr__(self, "pivots", tuple(pivots))
+        object.__setattr__(self, "variables", tuple(variables))
+        object.__setattr__(
+            self, "basic_variables_indicies", tuple(basic_variables_indicies)
+        )
 
     @staticmethod
     def from_problem(problem: Problem) -> Tableau:
@@ -67,7 +76,7 @@ class Tableau:
             ]
         )
 
-        return Tableau(data=data)
+        return Tableau(data=data, variables=problem.variables)
 
     def pivot(self, row: int, column: int) -> Tableau:
         data = self.data.copy()
@@ -78,38 +87,50 @@ class Tableau:
             if k != row:
                 data[k] -= data[row] * data[k, column]
 
-        pivots = list(self.pivots)
+        pivots = list(self.basic_variables_indicies)
 
         pivots[row] = column
 
-        return Tableau(data=data, pivots=tuple(pivots))
+        return Tableau(
+            data=data, variables=self.variables, basic_variables_indicies=tuple(pivots)
+        )
 
-    def without_columns(self, columns: list[int]) -> Tableau:
+    def without_variables(self, variables: list[Variable]) -> Tableau:
         data = self.data.copy()
 
-        for column in columns:
-            assert column < self.data.shape[1] - 1, "Can't remove the constant column"
-            assert column not in self.pivots, (
-                "Can't remove the column of a basic variable"
+        variables_indicies = [self.variables.index(variable) for variable in variables]
+        for variable_index in variables_indicies:
+            assert variable_index not in self.basic_variables_indicies, (
+                "Can't remove a basic variable"
             )
 
-        data = np.delete(data, columns, axis=1)
+        data = np.delete(data, variables_indicies, axis=1)
 
-        pivots = list(self.pivots)
+        basic_variables_indicies = list(self.basic_variables_indicies)
 
-        for i in range(len(self.pivots)):
-            for column in columns:
-                if self.pivots[i] > column:
-                    pivots[i] -= 1
+        for i in range(len(self.basic_variables_indicies)):
+            for variable_index in variables_indicies:
+                if self.basic_variables_indicies[i] > variable_index:
+                    basic_variables_indicies[i] -= 1
 
-        return Tableau(data=data, pivots=tuple(pivots))
+        return Tableau(
+            data=data,
+            variables=[
+                variable for variable in self.variables if variable not in variables
+            ],
+            basic_variables_indicies=tuple(basic_variables_indicies),
+        )
 
     def with_objective(self, c: np.ndarray) -> Tableau:
         data = self.data.copy()
 
         data[-1, :-1] = c
 
-        for i, j in enumerate(self.pivots):
+        for i, j in enumerate(self.basic_variables_indicies):
             data[-1] -= data[-1, j] * data[i]
 
-        return Tableau(data=data, pivots=self.pivots)
+        return Tableau(
+            data=data,
+            variables=self.variables,
+            basic_variables_indicies=self.basic_variables_indicies,
+        )

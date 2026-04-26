@@ -35,11 +35,10 @@ class OptimalSolution:
             return self
 
         return OptimalSolution(
-            solution=variables_mapper.map(self.solution), value=self.value
+            solution=variables_mapper.map(self.solution),
+            value=self.value,
+            steps=self.steps,
         )
-
-    def with_steps(self, steps: tuple[Step, ...] | list[Step]) -> OptimalSolution:
-        return OptimalSolution(self.solution, self.value, self.steps + tuple(steps))
 
 
 @dataclass(frozen=True)
@@ -58,9 +57,6 @@ class UnboundedSolution:
     def map(self, variables_mapper: VariablesMapper | None) -> UnboundedSolution:
         return self
 
-    def with_steps(self, steps: tuple[Step, ...] | list[Step]) -> UnboundedSolution:
-        return UnboundedSolution(self.steps + tuple(steps))
-
 
 @dataclass(frozen=True)
 class InfeasibleSolution:
@@ -77,9 +73,6 @@ class InfeasibleSolution:
 
     def map(self, _variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
         return self
-
-    def with_steps(self, steps: tuple[Step, ...] | list[Step]) -> InfeasibleSolution:
-        return InfeasibleSolution(self.steps + tuple(steps))
 
 
 type Solution = OptimalSolution | UnboundedSolution | InfeasibleSolution

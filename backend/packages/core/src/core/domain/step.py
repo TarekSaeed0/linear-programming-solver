@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Literal
 
 from core.domain.problem import Problem
+from core.domain.variable import Variable
 from core.solver.tableau import Tableau
 
 
@@ -50,8 +51,8 @@ class PivotTableauStep(TableauStep):
     type: Literal[StepType.PIVOT_TABLEAU] = field(
         default=StepType.PIVOT_TABLEAU, init=False
     )
-    row: int
-    column: int
+    entering_variable: Variable
+    leaving_variable: Variable
 
 
 @dataclass(frozen=True)

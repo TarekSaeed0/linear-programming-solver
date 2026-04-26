@@ -106,12 +106,9 @@ class TwoPhaseSimplex(StandardSimplex):
 
         steps.append(InitialBasicSolutionStep(solution.solution))
 
-        tableau = tableau.without_columns(
-            [
-                artificial_problem.variables.index(variable)
-                for variable in artificial_variables
-            ]
-        ).with_objective(standard_form_problem.c())
+        tableau = tableau.without_variables(artificial_variables).with_objective(
+            standard_form_problem.c()
+        )
 
         solution, _ = self.solve_tableau(tableau, steps)
 
