@@ -13,6 +13,7 @@ import { SolverService } from './services/solver.service';
 import { UpperCasePipe } from '@angular/common';
 import { ConstraintType } from './models/constraint';
 import { ChangeDetectorRef } from '@angular/core';
+// import { ElementRef, ViewChild } from '@angular/core';
 @Component({
   selector: 'app-root',
   imports: [UpperCasePipe,RouterOutlet, ObjectiveInput, ConstraintsInput,VariablesInput,FormsModule],
@@ -20,6 +21,7 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrl: './app.css',
 })
 export class App {
+  // @ViewChild('solutionDiv') solutionDiv!: ElementRef;
   private cdr = inject(ChangeDetectorRef);
   private solverService = inject(SolverService);
   protected variables: Variable[] = [
@@ -79,6 +81,9 @@ onConstraintsChange(updated: any) {
         this.solutionResult = res;
         this.isSolving = false;
          this.cdr.detectChanges();
+  //          setTimeout(() => {
+  //   this.solutionDiv?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // }, 100);
       },
       error: (err: any) => {
         console.error('Error solving problem:', err);
