@@ -86,7 +86,73 @@ def problem_to_string(problem: Problem) -> str:
 
 
 def tableau_to_string(tableau: Tableau) -> str:
-    return str(tableau.data)
+    columns_widths = (
+        [
+            max(
+                len(variable_to_string(tableau.variables[index]))
+                for index in tableau.basic_variables_indicies
+            )
+            + 1,
+        ]
+        + [
+            max(
+                len(variable_to_string(variable)),
+                *(len(f"{tableau.data[i, j]:g}") for i in range(tableau.data.shape[0])),
+            )
+            for j, variable in enumerate(tableau.variables)
+        ]
+        + [max(len(f"{tableau.data[i, -1]:g}") for i in range(tableau.data.shape[0]))]
+    )
+
+    result = " " * (columns_widths[0]) + " | "
+
+    result += " ".join(
+        variable_to_string(variable).center(columns_widths[j + 1])
+        for j, variable in enumerate(tableau.variables)
+    )
+
+    result += " | " + " " * columns_widths[-1] + "\n"
+
+    result += (
+        "-" * (columns_widths[0] + 1)
+        + "+"
+        + "-" * (sum(columns_widths[1:-1]) + len(columns_widths) - 1)
+        + "+"
+        + "-" * (columns_widths[-1] + 1)
+        + "\n"
+    )
+
+    for i in range(tableau.data.shape[0] - 1):
+        basic_variable = tableau.variables[tableau.basic_variables_indicies[i]]
+
+        result += variable_to_string(basic_variable).center(columns_widths[0]) + " | "
+
+        result += " ".join(
+            f"{tableau.data[i, j]:g}".center(columns_widths[j + 1])
+            for j in range(tableau.data.shape[1] - 1)
+        )
+
+        result += " | " + f"{tableau.data[i, -1]:g}".center(columns_widths[-1]) + "\n"
+
+    result += (
+        "-" * (columns_widths[0] + 1)
+        + "+"
+        + "-" * (sum(columns_widths[1:-1]) + len(columns_widths) - 1)
+        + "+"
+        + "-" * (columns_widths[-1] + 1)
+        + "\n"
+    )
+
+    result += " " * (columns_widths[0]) + " | "
+
+    result += " ".join(
+        f"{tableau.data[-1, j]:g}".center(columns_widths[j + 1])
+        for j in range(tableau.data.shape[1] - 1)
+    )
+
+    result += " | " + f"{tableau.data[-1, -1]:g}".center(columns_widths[-1]) + "\n"
+
+    return result
 
 
 def indent_string(indentation: int, string: str) -> str:
@@ -128,23 +194,6 @@ def main():
         method = MethodFactory.create(methods[method_choice][0])
 
         solution = method.solve(problem)
-        match solution.type:
-            case SolutionType.OPTIMAL:
-                print("The problem has an optimal solution")
-                print("Optimal value:", solution.value)
-                print("Optimal solution:")
-                print(
-                    ", ".join(
-                        f"{variable_to_string(variable)} = {value:g}"
-                        for variable, value in solution.solution.items()
-                    )
-                )
-            case SolutionType.INFEASIBLE:
-                print("The problem is infeasible")
-            case SolutionType.UNBOUNDED:
-                print("The problem is unbounded")
-
-        print()
 
         print("Steps:\n")
         for i, step in enumerate(solution.steps, start=1):
@@ -178,6 +227,23 @@ def main():
                     )
 
             print()
+
+        match solution.type:
+            case SolutionType.OPTIMAL:
+                print("The problem has an optimal solution")
+                print(f"Optimal value: {solution.value:g}")
+                print("Optimal solution:")
+                print(
+                    ", ".join(
+                        f"{variable_to_string(variable)} = {value:g}"
+                        for variable, value in solution.solution.items()
+                    )
+                )
+            case SolutionType.INFEASIBLE:
+                print("The problem is infeasible")
+            case SolutionType.UNBOUNDED:
+                print("The problem is unbounded")
+
     except (CoreError, ValueError) as e:
         print(f"Error: {e}")
 
