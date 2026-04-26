@@ -7,8 +7,7 @@ import { Variable, VariableType } from '../../../models/variable';
   templateUrl: './variables-input.html',
 })
 export class VariablesInput {
-  variables = input.required<Variable[]>();
-  
+variables = input<Variable[]>([]);  
   variablesChange = output<Variable[]>();
 
   protected readonly variableTypes = [

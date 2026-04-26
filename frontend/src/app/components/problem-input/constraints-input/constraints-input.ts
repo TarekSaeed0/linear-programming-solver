@@ -26,7 +26,7 @@ import { AutoSizeInputDirective } from 'ngx-autosize-input';
 import { RangePipe } from '../../../pipes/range.pipe';
 import { ConstraintType } from '../../../models/constraint';
 import { Variable } from '../../../models/variable';
-
+import { output } from '@angular/core';
 @Component({
   selector: 'app-constraints-input',
   imports: [ReactiveFormsModule, AutoSizeInputDirective, RangePipe],
@@ -47,7 +47,7 @@ import { Variable } from '../../../models/variable';
 })
 export class ConstraintsInput implements ControlValueAccessor, Validator, OnChanges {
   variables = input.required<Variable[]>();
-
+valueChange = output<any>();
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly numberValidator = Validators.pattern(/^[-+]?\d+(\.\d+)?$/);
 
@@ -72,22 +72,26 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
 
   ngOnInit() {
     this.form.valueChanges.subscribe((value) => {
-      this.onChange(value);
-      this.onTouched();
-    });
+    this.onChange(value);
+    this.onTouched();
+    this.valueChange.emit(value);
+  });
 
-    this.addConstraint();
-    this.addConstraint();
+    // this.addConstraint();
+    // this.addConstraint();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['variables']) {
       this.writeValue(this.form.value as any);
+Promise.resolve().then(() => {
       this.onChange(this.form.value);
-    }
+    });
+      }
   }
 
   writeValue(value: { type: ConstraintType; coefficients: string[]; constant: string }[]): void {
+      if (!value) return;
     while (this.form.length < value.length) {
       this.addConstraint();
     }
@@ -156,7 +160,7 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
         i = i > 0 ? i - 1 : i;
         break;
       case 'ArrowDown':
-        i = i + 1 < this.variables().length ? i + 1 : i;
+        i = i + 1 < this.form.length ? i + 1 : i;
         break;
       case 'ArrowLeft':
         if (input.value.length !== 0 && input.selectionStart !== 0) {

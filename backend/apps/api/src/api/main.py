@@ -1,13 +1,20 @@
+import uvicorn
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-
+from fastapi.middleware.cors import CORSMiddleware
 from core.exceptions import CoreError, InvalidProblemError, NotSolvableError
 
 from api.routers import solve
 
 app = FastAPI()
 
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.exception_handler(InvalidProblemError)
 async def invalid_problem_exception_handler(
     _request: Request, exc: InvalidProblemError
@@ -43,3 +50,5 @@ async def unhandled_exception_handler(
 
 
 app.include_router(solve.router)
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
