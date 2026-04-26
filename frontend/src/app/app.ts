@@ -29,7 +29,8 @@ export class App {
     {
       type: VariableType.NON_NEGATIVE,
       name: {
-        name: 'y',
+        name: 'x',
+        index: 3,
       },
     },
   ];

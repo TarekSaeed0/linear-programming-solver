@@ -71,10 +71,6 @@ export class ObjectiveInput {
       this.onChange(value);
       this.onTouched();
     });
-
-    setTimeout(() => {
-      this.onChange(this.form.value);
-    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {

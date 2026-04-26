@@ -76,9 +76,8 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
       this.onTouched();
     });
 
-    setTimeout(() => {
-      this.onChange(this.form.value);
-    });
+    this.addConstraint();
+    this.addConstraint();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -90,13 +89,7 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
 
   writeValue(value: { type: ConstraintType; coefficients: string[]; constant: string }[]): void {
     while (this.form.length < value.length) {
-      this.form.push(
-        this.formBuilder.group({
-          type: this.formBuilder.control<ConstraintType>(ConstraintType.LESS_EQUAL),
-          coefficients: this.formBuilder.array<string>([]),
-          constant: this.formBuilder.control<string>('', this.numberValidator),
-        }),
-      );
+      this.addConstraint();
     }
 
     while (this.form.length > value.length) {
