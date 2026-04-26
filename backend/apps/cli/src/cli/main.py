@@ -2,7 +2,7 @@ import math
 
 from core.domain.problem import Problem
 from core.domain.solution import SolutionType
-from core.domain.step import StepType
+from core.domain.step import Step, StepType
 from core.domain.variable import Variable, VariableConstraintType
 from core.exceptions import CoreError
 from core.solver.method_factory import MethodFactory, MethodName
@@ -159,6 +159,44 @@ def indent_string(indentation: int, string: str) -> str:
     return "\n".join("\t" * indentation + line for line in string.splitlines())
 
 
+def steps_to_string(steps: tuple[Step, ...]) -> str:
+    result = ""
+
+    for i, step in enumerate(steps, start=1):
+        result += f"Step {i}. "
+
+        match step.type:
+            case StepType.STANDARD_FORM_PROBLEM:
+                result += "Convert to standard form:\n"
+                result += indent_string(1, problem_to_string(step.problem)) + "\n"
+            case StepType.ARTIFICIAL_PROBLEM:
+                result += "Add artificial variables and change objective function:\n"
+                result += indent_string(1, problem_to_string(step.problem)) + "\n"
+            case StepType.INITIAL_TABLEAU:
+                result += "Initial tableau:\n\n"
+                result += indent_string(1, tableau_to_string(step.tableau)) + "\n"
+            case StepType.PIVOT_TABLEAU:
+                result += f"Pivot tableau with entering variable {variable_to_string(step.entering_variable)} and leaving variable {variable_to_string(step.leaving_variable)}:\n"
+                result += indent_string(1, tableau_to_string(step.tableau)) + "\n"
+            case StepType.INITIAL_BASIC_SOLUTION:
+                result += "Initial basic solution:\n"
+                result += (
+                    indent_string(
+                        1,
+                        ", ".join(
+                            f"{variable_to_string(variable)} = {value:g}"
+                            for variable, value in step.solution.items()
+                        ),
+                    )
+                    + "\n"
+                )
+
+        if i < len(steps):
+            result += "\n"
+
+    return result
+
+
 def main():
     try:
         print("Enter the problem:")
@@ -196,37 +234,7 @@ def main():
         solution = method.solve(problem)
 
         print("Steps:\n")
-        for i, step in enumerate(solution.steps, start=1):
-            print(f"Step {i}. ", end="")
-            match step.type:
-                case StepType.STANDARD_FORM_PROBLEM:
-                    print("Convert to standard form:")
-                    print(indent_string(1, problem_to_string(step.problem)))
-                case StepType.ARTIFICIAL_PROBLEM:
-                    print("Add artificial variables and change objective function:")
-                    print(indent_string(1, problem_to_string(step.problem)))
-                    pass
-                case StepType.INITIAL_TABLEAU:
-                    print("Initial tableau:")
-                    print(indent_string(1, tableau_to_string(step.tableau)))
-                case StepType.PIVOT_TABLEAU:
-                    print(
-                        f"Pivot tableau with entering variable {variable_to_string(step.entering_variable)} and leaving variable {variable_to_string(step.leaving_variable)}:"
-                    )
-                    print(indent_string(1, tableau_to_string(step.tableau)))
-                case StepType.INITIAL_BASIC_SOLUTION:
-                    print("Initial basic solution:")
-                    print(
-                        indent_string(
-                            1,
-                            ", ".join(
-                                f"{variable_to_string(variable)} = {value:g}"
-                                for variable, value in step.solution.items()
-                            ),
-                        )
-                    )
-
-            print()
+        print(steps_to_string(solution.steps))
 
         match solution.type:
             case SolutionType.OPTIMAL:
