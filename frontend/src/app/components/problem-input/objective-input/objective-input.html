@@ -1,7 +1,40 @@
 <div class="flex gap-2">
-  <select>
+  <select [formControl]="form.controls.type">
     @for (objectiveType of objectiveTypes; track objectiveType.value) {
       <option [value]="objectiveType.value">{{ objectiveType.label }}</option>
     }
   </select>
+
+  <div
+    class="grid gap-y-1.5 items-center justify-items-center w-fit"
+    [style.gridTemplateColumns]="'repeat(' + variables().length * 3 + ', auto)'"
+  >
+    @for (i of form.controls.coefficients.length | range; track $index) {
+      <input
+        #input
+        class="min-w-full h-fit"
+        type="text"
+        placeholder="0"
+        [formControl]="form.controls.coefficients.at(i)"
+        autoSizeInput
+        [extraWidth]="10"
+        (keydown)="onKeyDown(i, $event)"
+      />
+
+      <math class="ml-1">
+        <msub>
+          <mi>{{ variables()[i].name.name }}</mi>
+          @if (variables()[i].name.index !== null) {
+            <mn> {{ variables()[i].name.index }} </mn>
+          }
+        </msub>
+      </math>
+
+      @if (i < variables().length - 1) {
+        <math>
+          <mo>+</mo>
+        </math>
+      }
+    }
+  </div>
 </div>

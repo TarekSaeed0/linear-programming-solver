@@ -5,7 +5,6 @@ import {
   inject,
   input,
   OnChanges,
-  signal,
   SimpleChanges,
   viewChildren,
 } from '@angular/core';
@@ -14,6 +13,7 @@ import {
   ControlValueAccessor,
   FormArray,
   FormControl,
+  FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   NonNullableFormBuilder,
@@ -47,15 +47,17 @@ import { Variable } from '../../../models/variable';
 })
 export class ConstraintsInput implements ControlValueAccessor, Validator, OnChanges {
   variables = input.required<Variable[]>();
-  constraintsCount = signal(3);
 
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly numberValidator = Validators.pattern(/^[-+]?\d+(\.\d+)?$/);
 
-  form = this.formBuilder.group({
-    coefficients: this.formBuilder.array<FormArray<FormControl<string>>>([]),
-    constants: this.formBuilder.array<FormControl<string>>([]),
-  });
+  form = this.formBuilder.array<
+    FormGroup<{
+      type: FormControl<ConstraintType>;
+      coefficients: FormArray<FormControl<string>>;
+      constant: FormControl<string>;
+    }>
+  >([]);
 
   protected readonly constraintTypes = [
     { label: '&le;', value: ConstraintType.LESS_EQUAL },
@@ -81,53 +83,53 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['variables']) {
-      this.writeValue(this.form.value);
+      this.writeValue(this.form.value as any);
       this.onChange(this.form.value);
     }
   }
 
-  writeValue(value: any): void {
-    while (this.form.controls.coefficients.length < this.constraintsCount()) {
-      const row = this.formBuilder.array<FormControl<string>>(
-        Array.from({ length: this.variables().length }, () =>
-          this.formBuilder.control<string>('', this.numberValidator),
-        ),
+  writeValue(value: { type: ConstraintType; coefficients: string[]; constant: string }[]): void {
+    while (this.form.length < value.length) {
+      this.form.push(
+        this.formBuilder.group({
+          type: this.formBuilder.control<ConstraintType>(ConstraintType.LESS_EQUAL),
+          coefficients: this.formBuilder.array<string>([]),
+          constant: this.formBuilder.control<string>('', this.numberValidator),
+        }),
       );
-      this.form.controls.coefficients.push(row);
     }
 
-    while (this.form.controls.coefficients.length > this.constraintsCount()) {
-      this.form.controls.coefficients.removeAt(this.form.controls.coefficients.length - 1);
+    while (this.form.length > value.length) {
+      this.form.removeAt(this.form.length - 1);
     }
 
-    for (let i = 0; i < this.form.controls.coefficients.length; i++) {
-      const row = this.form.controls.coefficients.at(i);
-
-      while (row.length < this.variables().length) {
-        row.push(this.formBuilder.control<string>('', this.numberValidator));
-      }
-
-      while (row.length > this.variables().length) {
-        row.removeAt(row.length - 1);
-      }
-    }
-
-    while (this.form.controls.constants.length < this.constraintsCount()) {
-      this.form.controls.constants.push(this.formBuilder.control<string>('', this.numberValidator));
-    }
-
-    while (this.form.controls.constants.length > this.constraintsCount()) {
-      this.form.controls.constants.removeAt(this.form.controls.constants.length - 1);
-    }
-
-    for (let i = 0; i < this.constraintsCount(); i++) {
-      for (let j = 0; j < this.variables().length; j++) {
-        this.form.controls.coefficients
+    for (let i = 0; i < this.form.length; i++) {
+      while (this.form.at(i)?.controls.coefficients.length < this.variables().length) {
+        this.form
           .at(i)
-          .at(j)
-          .setValue(value?.coefficients?.[i]?.[j] ?? '', { emitEvent: false });
+          ?.controls.coefficients.push(this.formBuilder.control<string>('', this.numberValidator));
       }
-      this.form.controls.constants.at(i).setValue(value?.constants?.[i] ?? '', {
+
+      while (this.form.at(i)?.controls.coefficients.length > this.variables().length) {
+        this.form
+          .at(i)
+          ?.controls.coefficients.removeAt(this.form.at(i)?.controls.coefficients.length - 1);
+      }
+    }
+
+    for (let i = 0; i < this.form.length; i++) {
+      this.form
+        .at(i)
+        .controls.type.setValue(value[i].type ?? ConstraintType.LESS_EQUAL, { emitEvent: false });
+
+      for (let j = 0; j < this.form.at(i)?.controls.coefficients.length; j++) {
+        this.form
+          .at(i)
+          .controls.coefficients.at(j)
+          .setValue(value[i].coefficients[j] ?? '', { emitEvent: false });
+      }
+
+      this.form.at(i).controls.constant.setValue(value[i].constant ?? '', {
         emitEvent: false,
       });
     }
@@ -150,7 +152,7 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
   }
 
   validate(_: AbstractControl): ValidationErrors | null {
-    return this.form.valid ? null : { equationsInvalid: true };
+    return this.form.valid ? null : { constraintsInvalid: true };
   }
 
   onKeyDown(i: number, j: number, event: KeyboardEvent) {
@@ -197,12 +199,20 @@ export class ConstraintsInput implements ControlValueAccessor, Validator, OnChan
   }
 
   addConstraint(): void {
-    this.constraintsCount.update((count) => count + 1);
-    this.writeValue(this.form.getRawValue());
+    this.form.push(
+      this.formBuilder.group({
+        type: this.formBuilder.control<ConstraintType>(ConstraintType.LESS_EQUAL),
+        coefficients: this.formBuilder.array(
+          Array.from({ length: this.variables().length }, () =>
+            this.formBuilder.control<string>('', this.numberValidator),
+          ),
+        ),
+        constant: this.formBuilder.control<string>('', this.numberValidator),
+      }),
+    );
   }
 
   removeConstraint(index: number): void {
-    this.constraintsCount.update((count) => count - 1);
-    this.writeValue(this.form.getRawValue());
+    this.form.removeAt(index);
   }
 }

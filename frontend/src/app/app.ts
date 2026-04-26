@@ -1,11 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ConstraintsInput } from './components/problem-input/constraints-input/constraints-input';
 import { Variable, VariableType } from './models/variable';
+import { ObjectiveInput } from './components/problem-input/objective-input/objective-input';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ConstraintsInput],
+  imports: [RouterOutlet, ObjectiveInput, ConstraintsInput],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
