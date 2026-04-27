@@ -1,13 +1,21 @@
+from core.domain.step import (
+    InitialTableauStep,
+    PivotTableauStep,
+    StandardFormProblemStep,
+    Step,
+)
+from frozendict import frozendict
 import numpy as np
 
 from core.exceptions import NotSolvableError
 from core.solver.method import Method
 from core.domain.problem import Problem
 from core.domain.solution import (
+    OptimalSolution,
     Solution,
     UnboundedSolution,
 )
-from core.solver.tableau import Tableau
+from core.domain.tableau import Tableau
 
 
 class StandardSimplex(Method):
@@ -23,24 +31,44 @@ class StandardSimplex(Method):
 
         return ratios.argmin().astype(int).item()
 
-    def solve_tableau(self, tableau: Tableau) -> tuple[Tableau, Solution]:
+    def solve_tableau(
+        self, tableau: Tableau, steps: list[Step]
+    ) -> tuple[Solution, Tableau]:
+        steps.append(InitialTableauStep(tableau))
+
         while True:
             column = self.pivot_column(tableau)
 
             if tableau.data[-1, column] >= 0 or np.isclose(
                 tableau.data[-1, column], 0, atol=1e-9
             ):
-                return tableau, tableau.solution()
+                solution = np.zeros(tableau.data.shape[1] - 1)
+
+                for i in range(tableau.data.shape[0] - 1):
+                    solution[tableau.basic_variables_indicies[i]] = tableau.data[i, -1]
+
+                return OptimalSolution(
+                    solution=frozendict(zip(tableau.variables, solution.tolist())),
+                    value=-tableau.data[-1, -1].item(),
+                    steps=steps,
+                ), tableau
 
             row = self.pivot_row(tableau, column)
             if tableau.data[row, column] <= 0 or np.isclose(
                 tableau.data[row, column], 0, atol=1e-9
             ):
-                return tableau, UnboundedSolution()
+                return UnboundedSolution(steps), tableau
+
+            entering_variable = tableau.variables[column]
+            leaving_variable = tableau.variables[tableau.basic_variables_indicies[row]]
 
             tableau = tableau.pivot(row, column)
 
+            steps.append(PivotTableauStep(tableau, entering_variable, leaving_variable))
+
     def solve(self, problem: Problem) -> Solution:
+        steps: list[Step] = []
+
         if any(
             constraint.type != constraint.type.LESS_EQUAL
             for constraint in problem.constraints
@@ -49,30 +77,17 @@ class StandardSimplex(Method):
                 "Greater than or equal constraints are not supported by the standard simplex method"
             )
 
-        standard_problem = problem.to_standard_form()
-        _, solution = self.solve_tableau(Tableau.from_problem(standard_problem))
-        return solution.map(standard_problem.variables_mapper)
 
-    def solve_with_steps(self, problem: Problem) -> list[Step]:
-     steps = []
-    
-     standard_problem = problem.to_standard_form()
-     tableau = Tableau.from_problem(standard_problem)
-    
-     steps.append(InitialTableauStep(tableau=tableau))
-    
-     while True:
-        column = self.pivot_column(tableau)
+        standard_form_problem = problem.to_standard_form()
+        steps.append(StandardFormProblemStep(standard_form_problem))
 
-        if tableau.data[-1, column] >= 0 or np.isclose(tableau.data[-1, column], 0, atol=1e-9):
-            solution = tableau.solution().map(standard_problem.variables_mapper)
-            steps.append(SolutionStep(tableau=tableau, solution=solution))
-            return steps
+        solution, _ = self.solve_tableau(
+            Tableau.from_problem(standard_form_problem), steps
+        )
 
-        row = self.pivot_row(tableau, column)
-        if tableau.data[row, column] <= 0 or np.isclose(tableau.data[row, column], 0, atol=1e-9):
-            steps.append(SolutionStep(tableau=tableau, solution=UnboundedSolution()))
-            return steps
+        return (
+            standard_form_problem.solution_mapper.map(solution)
+            if standard_form_problem.solution_mapper is not None
+            else solution
+        )
 
-        tableau = tableau.pivot(row, column)
-        steps.append(PivotTableauStep(tableau=tableau, row=row, column=column))

@@ -1,13 +1,18 @@
 from pydantic import BaseModel
 
-from core.domain.variable import VariableType
+from core.domain.variable import VariableConstraintType
 
 
-class VariableNameSchema(BaseModel):
+class VariableSchema(BaseModel):
     name: str
     index: int | None = None
 
 
-class VariableSchema(BaseModel):
-    type: VariableType
-    name: VariableNameSchema
+class VariableConstraintSchema(BaseModel):
+    type: VariableConstraintType
+    variable: VariableSchema
+
+
+class VariableValueSchema(BaseModel):
+    variable: VariableSchema
+    value: float

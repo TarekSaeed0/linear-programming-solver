@@ -1,22 +1,30 @@
 import math
 
 from core.domain.problem import Problem
-from core.domain.solution import SolutionType
-from core.domain.variable import Variable, VariableType
+from core.domain.solution import Solution, SolutionType
+from core.domain.step import Step, StepType
+from core.domain.variable import Variable, VariableConstraintType
 from core.exceptions import CoreError
 from core.solver.method_factory import MethodFactory, MethodName
 
 from cli.parse import (
     parse_problem,
 )
+from core.domain.tableau import Tableau
+
+
+def number_to_string(number: float) -> str:
+    if math.isclose(number, 0, abs_tol=1e-9):
+        number = 0
+    return f"{number:.6f}".rstrip("0").rstrip(".")
 
 
 def variable_to_string(variable: Variable) -> str:
-    if variable.name.index is not None:
+    if variable.index is not None:
         subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-        return variable.name.name + str(variable.name.index).translate(subscript_table)
+        return variable.name + str(variable.index).translate(subscript_table)
 
-    return variable.name.name
+    return variable.name
 
 
 def problem_to_string(problem: Problem) -> str:
@@ -35,9 +43,9 @@ def problem_to_string(problem: Problem) -> str:
                     result += "-"
 
             if not math.isclose(abs(coefficient), 1):
-                result += f"{abs(coefficient):g}"
+                result += number_to_string(abs(coefficient))
 
-            result += variable_to_string(problem.variables[i])
+            result += variable_to_string(problem.variables_constraints[i].variable)
 
         return result if result else "0"
 
@@ -46,23 +54,23 @@ def problem_to_string(problem: Problem) -> str:
     group_type = None
     group_start = 0
     i = 0
-    while i < len(problem.variables):
+    while i < len(problem.variables_constraints):
         if group_type is None:
-            group_type = problem.variables[i].type
+            group_type = problem.variables_constraints[i].type
 
         if (
-            i == len(problem.variables) - 1
-            or problem.variables[i + 1].type != group_type
+            i == len(problem.variables_constraints) - 1
+            or problem.variables_constraints[i + 1].type != group_type
         ):
             if variables_constraint != "":
                 variables_constraint += ", "
             variables_constraint += ",".join(
-                variable_to_string(variable)
-                for variable in problem.variables[group_start : i + 1]
+                variable_to_string(constraint.variable)
+                for constraint in problem.variables_constraints[group_start : i + 1]
             )
-            if group_type == VariableType.NON_NEGATIVE:
+            if group_type == VariableConstraintType.NON_NEGATIVE:
                 variables_constraint += " >= 0"
-            elif group_type == VariableType.UNRESTRICTED:
+            elif group_type == VariableConstraintType.UNRESTRICTED:
                 variables_constraint += " unrestricted"
 
             group_type = None
@@ -81,6 +89,152 @@ def problem_to_string(problem: Problem) -> str:
         + "\n           "
         + variables_constraint
     )
+
+
+def tableau_to_string(tableau: Tableau) -> str:
+    columns_widths = (
+        [
+            max(
+                len(variable_to_string(tableau.variables[index]))
+                for index in tableau.basic_variables_indicies
+            )
+            + 1,
+        ]
+        + [
+            max(
+                len(variable_to_string(variable)),
+                *(
+                    len(number_to_string(tableau.data[i, j]))
+                    for i in range(tableau.data.shape[0])
+                ),
+            )
+            for j, variable in enumerate(tableau.variables)
+        ]
+        + [
+            max(
+                len(number_to_string(tableau.data[i, -1]))
+                for i in range(tableau.data.shape[0])
+            )
+        ]
+    )
+
+    result = " " * (columns_widths[0]) + " | "
+
+    result += " ".join(
+        variable_to_string(variable).center(columns_widths[j + 1])
+        for j, variable in enumerate(tableau.variables)
+    )
+
+    result += " | " + " " * columns_widths[-1] + "\n"
+
+    result += (
+        "-" * (columns_widths[0] + 1)
+        + "+"
+        + "-" * (sum(columns_widths[1:-1]) + len(columns_widths) - 1)
+        + "+"
+        + "-" * (columns_widths[-1] + 1)
+        + "\n"
+    )
+
+    for i in range(tableau.data.shape[0] - 1):
+        basic_variable = tableau.variables[tableau.basic_variables_indicies[i]]
+
+        result += variable_to_string(basic_variable).center(columns_widths[0]) + " | "
+
+        result += " ".join(
+            number_to_string(tableau.data[i, j]).center(columns_widths[j + 1])
+            for j in range(tableau.data.shape[1] - 1)
+        )
+
+        result += (
+            " | "
+            + number_to_string(tableau.data[i, -1]).center(columns_widths[-1])
+            + "\n"
+        )
+
+    result += (
+        "-" * (columns_widths[0] + 1)
+        + "+"
+        + "-" * (sum(columns_widths[1:-1]) + len(columns_widths) - 1)
+        + "+"
+        + "-" * (columns_widths[-1] + 1)
+        + "\n"
+    )
+
+    result += " " * (columns_widths[0]) + " | "
+
+    result += " ".join(
+        number_to_string(tableau.data[-1, j]).center(columns_widths[j + 1])
+        for j in range(tableau.data.shape[1] - 1)
+    )
+
+    result += (
+        " | " + number_to_string(tableau.data[-1, -1]).center(columns_widths[-1]) + "\n"
+    )
+
+    return result
+
+
+def indent_string(indentation: int, string: str) -> str:
+    return "\n".join("\t" * indentation + line for line in string.splitlines())
+
+
+def steps_to_string(steps: tuple[Step, ...]) -> str:
+    result = ""
+
+    for i, step in enumerate(steps, start=1):
+        result += f"Step {i}. "
+
+        match step.type:
+            case StepType.STANDARD_FORM_PROBLEM:
+                result += "Convert to standard form:\n"
+                result += indent_string(1, problem_to_string(step.problem)) + "\n"
+            case StepType.ARTIFICIAL_PROBLEM:
+                result += "Add artificial variables and change objective function:\n"
+                result += indent_string(1, problem_to_string(step.problem)) + "\n"
+            case StepType.INITIAL_TABLEAU:
+                result += "Initial tableau:\n\n"
+                result += indent_string(1, tableau_to_string(step.tableau)) + "\n"
+            case StepType.PIVOT_TABLEAU:
+                result += f"Pivot tableau with entering variable {variable_to_string(step.entering_variable)} and leaving variable {variable_to_string(step.leaving_variable)}:\n"
+                result += indent_string(1, tableau_to_string(step.tableau)) + "\n"
+            case StepType.INITIAL_BASIC_SOLUTION:
+                result += "Initial basic solution:\n"
+                result += (
+                    indent_string(
+                        1,
+                        ", ".join(
+                            f"{variable_to_string(variable)} = {number_to_string(value)}"
+                            for variable, value in step.solution.items()
+                        ),
+                    )
+                    + "\n"
+                )
+
+        if i < len(steps):
+            result += "\n"
+
+    return result
+
+
+def solution_to_string(solution: Solution) -> str:
+    result = ""
+
+    match solution.type:
+        case SolutionType.OPTIMAL:
+            result += "The problem has an optimal solution\n"
+            result += f"Optimal value: {number_to_string(solution.value)}\n"
+            result += "Optimal solution:\n"
+            result += ", ".join(
+                f"{variable_to_string(variable)} = {number_to_string(value)}"
+                for variable, value in solution.solution.items()
+            )
+        case SolutionType.INFEASIBLE:
+            result += "The problem is infeasible\n"
+        case SolutionType.UNBOUNDED:
+            result += "The problem is unbounded\n"
+
+    return result
 
 
 def main():
@@ -118,17 +272,34 @@ def main():
         method = MethodFactory.create(methods[method_choice][0])
 
         solution = method.solve(problem)
-        match solution.type:
-            case SolutionType.OPTIMAL:
-                print("The problem has an optimal solution")
-                print("Optimal value:", solution.value)
-                print("Optimal solution:")
-                for variable, value in zip(problem.variables, solution.solution):
-                    print(f"{variable_to_string(variable)} = {value:g}")
-            case SolutionType.INFEASIBLE:
-                print("The problem is infeasible")
-            case SolutionType.UNBOUNDED:
-                print("The problem is unbounded")
+
+        steps_string = steps_to_string(solution.steps)
+        solution_string = solution_to_string(solution)
+
+        show_steps = False
+        while True:
+            show_steps_choice = input("Would you like to see the steps?: ").lower()
+            if show_steps_choice not in ("y", "n", "yes", "no"):
+                print("Error: Please enter yes or no")
+            else:
+                show_steps = show_steps_choice in ("y", "yes")
+                break
+
+        print()
+
+        with open("steps.txt", "w") as steps_file:
+            steps_file.write(steps_string)
+            steps_file.write("\n")
+            steps_file.write(solution_string)
+
+        if show_steps:
+            print("Steps:\n")
+            print(steps_string)
+
+        print()
+
+        print(solution_string)
+
     except (CoreError, ValueError) as e:
         print(f"Error: {e}")
 

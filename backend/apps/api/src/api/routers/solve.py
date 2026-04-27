@@ -1,3 +1,5 @@
+from api.mappers.solution_mapper import SolutionMapper
+from api.schemas.solution_schema import SolutionSchema
 from core.solver.method_factory import MethodFactory
 from fastapi import APIRouter
 
@@ -9,7 +11,7 @@ router = APIRouter(prefix="/api/solve", tags=["solve"])
 
 
 @router.post("/")
-async def solve(request: SolveRequestSchema):
+async def solve(request: SolveRequestSchema) -> SolutionSchema:
     method = MethodFactory.create(request.method)
     solution = method.solve(ProblemMapper.from_schema(request.problem))
-    return solution
+    return SolutionMapper.to_schema(solution)

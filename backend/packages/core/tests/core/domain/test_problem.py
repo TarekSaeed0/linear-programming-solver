@@ -3,7 +3,11 @@ import pytest
 from core.domain.constraint import Constraint, ConstraintType
 from core.domain.objective import Objective, ObjectiveType
 from core.domain.problem import Problem
-from core.domain.variable import Variable, VariableName, VariableType
+from core.domain.variable import (
+    VariableConstraint,
+    Variable,
+    VariableConstraintType,
+)
 
 
 class TestProblem:
@@ -15,9 +19,9 @@ class TestProblem:
                 Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
                 Constraint(ConstraintType.GREATER_EQUAL, [2, 1], 4),
             ],
-            variables=[
-                Variable(VariableType.NON_NEGATIVE, VariableName("x")),
-                Variable(VariableType.UNRESTRICTED, VariableName("y")),
+            variables_constraints=[
+                VariableConstraint(VariableConstraintType.NON_NEGATIVE, Variable("x")),
+                VariableConstraint(VariableConstraintType.UNRESTRICTED, Variable("y")),
             ],
         )
 
@@ -35,11 +39,15 @@ class TestProblem:
                 Constraint(ConstraintType.EQUAL, [1, 1, -1, 1, 0], 3),
                 Constraint(ConstraintType.EQUAL, [2, 1, -1, 0, -1], 4),
             ],
-            variables=[
-                Variable(VariableType.NON_NEGATIVE, VariableName("x")),
-                Variable(VariableType.NON_NEGATIVE, VariableName("y⁺")),
-                Variable(VariableType.NON_NEGATIVE, VariableName("y⁻")),
-                Variable(VariableType.NON_NEGATIVE, VariableName("s", 1)),
-                Variable(VariableType.NON_NEGATIVE, VariableName("s", 2)),
+            variables_constraints=[
+                VariableConstraint(VariableConstraintType.NON_NEGATIVE, Variable("x")),
+                VariableConstraint(VariableConstraintType.NON_NEGATIVE, Variable("y⁺")),
+                VariableConstraint(VariableConstraintType.NON_NEGATIVE, Variable("y⁻")),
+                VariableConstraint(
+                    VariableConstraintType.NON_NEGATIVE, Variable("s", 1)
+                ),
+                VariableConstraint(
+                    VariableConstraintType.NON_NEGATIVE, Variable("s", 2)
+                ),
             ],
         )
