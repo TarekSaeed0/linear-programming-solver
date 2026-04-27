@@ -71,7 +71,7 @@ uv sync --all-packages
 Run the backend server:
 
 ```bash
-uv run apps/api/src/api/main.py
+uv run fastapi dev apps/api/src/api/main.py
 ```
 
 Or run CLI:
