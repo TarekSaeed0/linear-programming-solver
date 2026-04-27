@@ -31,7 +31,7 @@ class Tableau:
             ), "basic variables must be unique"
         else:
             basic_variables_indicies = [None] * (data.shape[0] - 1)
-            assert type(basic_variables_indicies) is list
+            assert isinstance(basic_variables_indicies, list)
             for i in range(data.shape[0] - 1):
                 for j in range(data.shape[1] - 1):
                     if math.isclose(data[i, j], 1) and all(

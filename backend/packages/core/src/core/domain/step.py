@@ -17,47 +17,41 @@ class StepType(Enum):
 
 
 @dataclass(frozen=True)
-class ProblemStep:
+class StandardFormProblemStep:
+    type: Literal[StepType.STANDARD_FORM_PROBLEM] = field(
+        default=StepType.STANDARD_FORM_PROBLEM, init=False
+    )
     problem: Problem
 
 
 @dataclass(frozen=True)
-class StandardFormProblemStep(ProblemStep):
-    type: Literal[StepType.STANDARD_FORM_PROBLEM] = field(
-        default=StepType.STANDARD_FORM_PROBLEM, init=False
-    )
-
-
-@dataclass(frozen=True)
-class ArtificialProblemStep(ProblemStep):
+class ArtificialProblemStep:
     type: Literal[StepType.ARTIFICIAL_PROBLEM] = field(
         default=StepType.ARTIFICIAL_PROBLEM, init=False
     )
+    problem: Problem
 
 
 @dataclass(frozen=True)
-class TableauStep:
+class InitialTableauStep:
+    type: Literal[StepType.INITIAL_TABLEAU] = field(
+        default=StepType.INITIAL_TABLEAU, init=False
+    )
     tableau: Tableau
 
 
 @dataclass(frozen=True)
-class InitialTableauStep(TableauStep):
-    type: Literal[StepType.INITIAL_TABLEAU] = field(
-        default=StepType.INITIAL_TABLEAU, init=False
-    )
-
-
-@dataclass(frozen=True)
-class PivotTableauStep(TableauStep):
+class PivotTableauStep:
     type: Literal[StepType.PIVOT_TABLEAU] = field(
         default=StepType.PIVOT_TABLEAU, init=False
     )
+    tableau: Tableau
     entering_variable: Variable
     leaving_variable: Variable
 
 
 @dataclass(frozen=True)
-class InitialBasicSolutionStep(TableauStep):
+class InitialBasicSolutionStep:
     type: Literal[StepType.INITIAL_BASIC_SOLUTION] = field(
         default=StepType.INITIAL_BASIC_SOLUTION, init=False
     )
