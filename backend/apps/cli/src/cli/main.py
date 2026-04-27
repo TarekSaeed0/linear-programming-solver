@@ -13,6 +13,12 @@ from cli.parse import (
 from core.domain.tableau import Tableau
 
 
+def number_to_string(number: float) -> str:
+    if math.isclose(number, 0, abs_tol=1e-9):
+        number = 0
+    return f"{number:.6f}".rstrip("0").rstrip(".")
+
+
 def variable_to_string(variable: Variable) -> str:
     if variable.index is not None:
         subscript_table = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
@@ -37,7 +43,7 @@ def problem_to_string(problem: Problem) -> str:
                     result += "-"
 
             if not math.isclose(abs(coefficient), 1):
-                result += f"{abs(coefficient):g}"
+                result += number_to_string(abs(coefficient))
 
             result += variable_to_string(problem.variables_constraints[i].variable)
 
@@ -97,11 +103,19 @@ def tableau_to_string(tableau: Tableau) -> str:
         + [
             max(
                 len(variable_to_string(variable)),
-                *(len(f"{tableau.data[i, j]:g}") for i in range(tableau.data.shape[0])),
+                *(
+                    len(number_to_string(tableau.data[i, j]))
+                    for i in range(tableau.data.shape[0])
+                ),
             )
             for j, variable in enumerate(tableau.variables)
         ]
-        + [max(len(f"{tableau.data[i, -1]:g}") for i in range(tableau.data.shape[0]))]
+        + [
+            max(
+                len(number_to_string(tableau.data[i, -1]))
+                for i in range(tableau.data.shape[0])
+            )
+        ]
     )
 
     result = " " * (columns_widths[0]) + " | "
@@ -128,11 +142,15 @@ def tableau_to_string(tableau: Tableau) -> str:
         result += variable_to_string(basic_variable).center(columns_widths[0]) + " | "
 
         result += " ".join(
-            f"{tableau.data[i, j]:g}".center(columns_widths[j + 1])
+            number_to_string(tableau.data[i, j]).center(columns_widths[j + 1])
             for j in range(tableau.data.shape[1] - 1)
         )
 
-        result += " | " + f"{tableau.data[i, -1]:g}".center(columns_widths[-1]) + "\n"
+        result += (
+            " | "
+            + number_to_string(tableau.data[i, -1]).center(columns_widths[-1])
+            + "\n"
+        )
 
     result += (
         "-" * (columns_widths[0] + 1)
@@ -146,11 +164,13 @@ def tableau_to_string(tableau: Tableau) -> str:
     result += " " * (columns_widths[0]) + " | "
 
     result += " ".join(
-        f"{tableau.data[-1, j]:g}".center(columns_widths[j + 1])
+        number_to_string(tableau.data[-1, j]).center(columns_widths[j + 1])
         for j in range(tableau.data.shape[1] - 1)
     )
 
-    result += " | " + f"{tableau.data[-1, -1]:g}".center(columns_widths[-1]) + "\n"
+    result += (
+        " | " + number_to_string(tableau.data[-1, -1]).center(columns_widths[-1]) + "\n"
+    )
 
     return result
 
@@ -184,7 +204,7 @@ def steps_to_string(steps: tuple[Step, ...]) -> str:
                     indent_string(
                         1,
                         ", ".join(
-                            f"{variable_to_string(variable)} = {value:g}"
+                            f"{variable_to_string(variable)} = {number_to_string(value)}"
                             for variable, value in step.solution.items()
                         ),
                     )
@@ -203,10 +223,10 @@ def solution_to_string(solution: Solution) -> str:
     match solution.type:
         case SolutionType.OPTIMAL:
             result += "The problem has an optimal solution\n"
-            result += f"Optimal value: {solution.value:g}\n"
+            result += f"Optimal value: {number_to_string(solution.value)}\n"
             result += "Optimal solution:\n"
             result += ", ".join(
-                f"{variable_to_string(variable)} = {value:g}"
+                f"{variable_to_string(variable)} = {number_to_string(value)}"
                 for variable, value in solution.solution.items()
             )
         case SolutionType.INFEASIBLE:
