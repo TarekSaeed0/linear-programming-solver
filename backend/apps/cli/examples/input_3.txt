@@ -6,3 +6,4 @@ subject to
 x_1 free, x_2, x_3, x_4, x_5 >= 0
 
 2
+n

@@ -1,7 +1,7 @@
 import math
 
 from core.domain.problem import Problem
-from core.domain.solution import SolutionType
+from core.domain.solution import Solution, SolutionType
 from core.domain.step import Step, StepType
 from core.domain.variable import Variable, VariableConstraintType
 from core.exceptions import CoreError
@@ -197,6 +197,26 @@ def steps_to_string(steps: tuple[Step, ...]) -> str:
     return result
 
 
+def solution_to_string(solution: Solution) -> str:
+    result = ""
+
+    match solution.type:
+        case SolutionType.OPTIMAL:
+            result += "The problem has an optimal solution\n"
+            result += f"Optimal value: {solution.value:g}\n"
+            result += "Optimal solution:\n"
+            result += ", ".join(
+                f"{variable_to_string(variable)} = {value:g}"
+                for variable, value in solution.solution.items()
+            )
+        case SolutionType.INFEASIBLE:
+            result += "The problem is infeasible\n"
+        case SolutionType.UNBOUNDED:
+            result += "The problem is unbounded\n"
+
+    return result
+
+
 def main():
     try:
         print("Enter the problem:")
@@ -233,24 +253,32 @@ def main():
 
         solution = method.solve(problem)
 
-        print("Steps:\n")
-        print(steps_to_string(solution.steps))
+        steps_string = steps_to_string(solution.steps)
+        solution_string = solution_to_string(solution)
 
-        match solution.type:
-            case SolutionType.OPTIMAL:
-                print("The problem has an optimal solution")
-                print(f"Optimal value: {solution.value:g}")
-                print("Optimal solution:")
-                print(
-                    ", ".join(
-                        f"{variable_to_string(variable)} = {value:g}"
-                        for variable, value in solution.solution.items()
-                    )
-                )
-            case SolutionType.INFEASIBLE:
-                print("The problem is infeasible")
-            case SolutionType.UNBOUNDED:
-                print("The problem is unbounded")
+        show_steps = False
+        while True:
+            show_steps_choice = input("Would you like to see the steps?: ").lower()
+            if show_steps_choice not in ("y", "n", "yes", "no"):
+                print("Error: Please enter yes or no")
+            else:
+                show_steps = show_steps_choice in ("y", "yes")
+                break
+
+        print()
+
+        with open("steps.txt", "w") as steps_file:
+            steps_file.write(steps_string)
+            steps_file.write("\n")
+            steps_file.write(solution_string)
+
+        if show_steps:
+            print("Steps:\n")
+            print(steps_string)
+
+        print()
+
+        print(solution_string)
 
     except (CoreError, ValueError) as e:
         print(f"Error: {e}")
