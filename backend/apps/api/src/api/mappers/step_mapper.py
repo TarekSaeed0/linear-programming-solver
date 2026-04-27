@@ -9,6 +9,7 @@ from api.schemas.step_schema import (
     StandardFormProblemStepSchema,
     StepSchema,
 )
+from api.schemas.variable_schema import VariableValueSchema
 from core.domain.step import (
     ArtificialProblemStep,
     InitialBasicSolutionStep,
@@ -44,10 +45,13 @@ class StepMapper:
                 )
             case StepType.INITIAL_BASIC_SOLUTION:
                 return InitialBasicSolutionStepSchema(
-                    solution={
-                        VariableMapper.to_schema(variable): value
+                    solution=[
+                        VariableValueSchema(
+                            variable=VariableMapper.to_schema(variable),
+                            value=value,
+                        )
                         for variable, value in step.solution.items()
-                    },
+                    ],
                 )
 
     @staticmethod
@@ -70,7 +74,7 @@ class StepMapper:
             case StepType.INITIAL_BASIC_SOLUTION:
                 return InitialBasicSolutionStep(
                     solution={
-                        VariableMapper.from_schema(variable): value
-                        for variable, value in schema.solution.items()
+                        VariableMapper.from_schema(item.variable): item.value
+                        for item in schema.solution
                     }
                 )

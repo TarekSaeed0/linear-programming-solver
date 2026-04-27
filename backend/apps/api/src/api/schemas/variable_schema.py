@@ -11,3 +11,8 @@ class VariableSchema(BaseModel):
 class VariableConstraintSchema(BaseModel):
     type: VariableConstraintType
     variable: VariableSchema
+
+
+class VariableValueSchema(BaseModel):
+    variable: VariableSchema
+    value: float

@@ -6,6 +6,7 @@ from api.schemas.solution_schema import (
     SolutionSchema,
     UnboundedSolutionSchema,
 )
+from api.schemas.variable_schema import VariableValueSchema
 from core.domain.solution import (
     InfeasibleSolution,
     OptimalSolution,
@@ -21,10 +22,13 @@ class SolutionMapper:
         match solution.type:
             case SolutionType.OPTIMAL:
                 return OptimalSolutionSchema(
-                    solution={
-                        VariableMapper.to_schema(variable): value
+                    solution=[
+                        VariableValueSchema(
+                            variable=VariableMapper.to_schema(variable),
+                            value=value,
+                        )
                         for variable, value in solution.solution.items()
-                    },
+                    ],
                     value=solution.value,
                     steps=[StepMapper.to_schema(step) for step in solution.steps],
                 )
@@ -43,8 +47,8 @@ class SolutionMapper:
             case SolutionType.OPTIMAL:
                 return OptimalSolution(
                     solution={
-                        VariableMapper.from_schema(variable): value
-                        for variable, value in schema.solution.items()
+                        VariableMapper.from_schema(item.variable): item.value
+                        for item in schema.solution
                     },
                     value=schema.value,
                     steps=[StepMapper.from_schema(step) for step in schema.steps],

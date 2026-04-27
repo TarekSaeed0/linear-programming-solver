@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 from api.schemas.problem_schema import ProblemSchema
 from api.schemas.tableau_schema import TableauSchema
-from api.schemas.variable_schema import VariableSchema
+from api.schemas.variable_schema import VariableSchema, VariableValueSchema
 from core.domain.step import StepType
 
 
@@ -31,7 +31,7 @@ class PivotTableauStepSchema(BaseModel):
 
 class InitialBasicSolutionStepSchema(BaseModel):
     type: Literal[StepType.INITIAL_BASIC_SOLUTION] = StepType.INITIAL_BASIC_SOLUTION
-    solution: dict[VariableSchema, float]
+    solution: list[VariableValueSchema]
 
 
 type StepSchema = Annotated[
