@@ -131,8 +131,8 @@ console.log("FINAL PROBLEM:", JSON.stringify(problem, null, 2));
       },
       error: (err: any) => {
       console.error('Full error:', JSON.stringify(err.error, null, 2));
-        console.error(' dfssssssssssssssss dsaffffffff dsaffffff Error solving problem:', err);
-        alert('Server Error:asdfasfadsf ' + (err.error?.detail || 'Unknown error'));
+        console.error(' Error solving problem:', err);
+        alert('Server Error:' + (err.error?.detail || 'Unknown error'));
         this.isSolving = false;
         this.cdr.detectChanges(); 
       }
