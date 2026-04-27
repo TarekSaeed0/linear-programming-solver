@@ -15,8 +15,8 @@ from core.domain.variable import (
 from core.solver.methods.standard_simplex import StandardSimplex
 from core.domain.problem import (
     Problem,
+    SolutionMapper,
     VariableMapping,
-    VariablesMapper,
 )
 from core.domain.solution import (
     InfeasibleSolution,
@@ -88,8 +88,8 @@ class TwoPhaseSimplex(StandardSimplex):
                 for constraint in constraints
             ],
             variables_constraints=tuple(variables_constraints),
-            variables_mapper=VariablesMapper(
-                mappings=tuple(
+            solution_mapper=SolutionMapper(
+                variables_mappings=tuple(
                     VariableMapping(constraint.variable)
                     for constraint in standard_form_problem.variables_constraints
                 )
@@ -118,7 +118,9 @@ class TwoPhaseSimplex(StandardSimplex):
 
         steps.append(
             InitialBasicSolutionStep(
-                solution.map(artificial_problem.variables_mapper).solution
+                artificial_problem.solution_mapper.map(solution).solution
+                if artificial_problem.solution_mapper is not None
+                else solution.solution
             )
         )
 
@@ -128,4 +130,8 @@ class TwoPhaseSimplex(StandardSimplex):
 
         solution, _ = self.solve_tableau(tableau, steps)
 
-        return solution.map(standard_form_problem.variables_mapper)
+        return (
+            standard_form_problem.solution_mapper.map(solution)
+            if standard_form_problem.solution_mapper is not None
+            else solution
+        )

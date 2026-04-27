@@ -102,6 +102,27 @@ class TestTwoPhaseSimplex:
             ),
             TestCase(
                 problem=Problem(
+                    objective=Objective(ObjectiveType.MINIMIZE, [1, 1]),
+                    constraints=[
+                        Constraint(ConstraintType.GREATER_EQUAL, [1, 0], 1),
+                        Constraint(ConstraintType.GREATER_EQUAL, [3, 1], 2),
+                    ],
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x")
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("y")
+                        ),
+                    ],
+                ),
+                expected_solution=OptimalSolution(
+                    solution=frozendict({Variable("x"): 1.0, Variable("y"): 0.0}),
+                    value=1,
+                ),
+            ),
+            TestCase(
+                problem=Problem(
                     objective=Objective(ObjectiveType.MAXIMIZE, [2, 1]),
                     constraints=[
                         Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),

@@ -49,7 +49,7 @@ class StandardSimplex(Method):
 
                 return OptimalSolution(
                     solution=frozendict(zip(tableau.variables, solution.tolist())),
-                    value=tableau.data[-1, -1].item(),
+                    value=-tableau.data[-1, -1].item(),
                     steps=steps,
                 ), tableau
 
@@ -84,4 +84,8 @@ class StandardSimplex(Method):
             Tableau.from_problem(standard_form_problem), steps
         )
 
-        return solution.map(standard_form_problem.variables_mapper)
+        return (
+            standard_form_problem.solution_mapper.map(solution)
+            if standard_form_problem.solution_mapper is not None
+            else solution
+        )

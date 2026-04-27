@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from core.domain.problem import VariablesMapper
-from core.domain.step import Step
+if TYPE_CHECKING:
+    from core.domain.step import Step
 from core.domain.variable import Variable
 from frozendict import frozendict
 
@@ -32,16 +32,6 @@ class OptimalSolution:
         object.__setattr__(self, "value", value)
         object.__setattr__(self, "steps", tuple(steps))
 
-    def map(self, variables_mapper: VariablesMapper | None) -> OptimalSolution:
-        if variables_mapper is None:
-            return self
-
-        return OptimalSolution(
-            solution=variables_mapper.map(self.solution),
-            value=self.value,
-            steps=self.steps,
-        )
-
 
 @dataclass(frozen=True)
 class UnboundedSolution:
@@ -56,9 +46,6 @@ class UnboundedSolution:
     ):
         object.__setattr__(self, "steps", tuple(steps))
 
-    def map(self, variables_mapper: VariablesMapper | None) -> UnboundedSolution:
-        return self
-
 
 @dataclass(frozen=True)
 class InfeasibleSolution:
@@ -72,9 +59,6 @@ class InfeasibleSolution:
         steps: tuple[Step, ...] | list[Step] = (),
     ):
         object.__setattr__(self, "steps", tuple(steps))
-
-    def map(self, _variables_mapper: VariablesMapper | None) -> InfeasibleSolution:
-        return self
 
 
 type Solution = OptimalSolution | UnboundedSolution | InfeasibleSolution

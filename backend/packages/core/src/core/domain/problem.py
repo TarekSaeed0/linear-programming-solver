@@ -1,5 +1,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import overload
+from core.domain.solution import (
+    InfeasibleSolution,
+    OptimalSolution,
+    Solution,
+    SolutionType,
+    UnboundedSolution,
+)
 from frozendict import frozendict
 import numpy as np
 
@@ -35,20 +43,45 @@ class VariableMapping:
 
 
 @dataclass(frozen=True)
-class VariablesMapper:
-    mappings: tuple[VariableMapping, ...]
-    parent: VariablesMapper | None = None
+class SolutionMapper:
+    variables_mappings: tuple[VariableMapping, ...] | None = None
+    value_mapping: Callable[[float], float] | None = None
+    parent: SolutionMapper | None = None
 
-    def map(
-        self, variables: frozendict[Variable, float]
-    ) -> frozendict[Variable, float]:
-        mapped_variables: frozendict[Variable, float] = frozendict(
-            {mapping.variable: mapping.mapping(variables) for mapping in self.mappings}
+    @overload
+    def map(self, solution: OptimalSolution) -> OptimalSolution: ...
+    @overload
+    def map(self, solution: UnboundedSolution) -> UnboundedSolution: ...
+    @overload
+    def map(self, solution: InfeasibleSolution) -> InfeasibleSolution: ...
+
+    def map(self, solution: Solution) -> Solution:
+        if solution.type != SolutionType.OPTIMAL:
+            return solution
+
+        mapped_solution = OptimalSolution(
+            solution=(
+                frozendict(
+                    {
+                        mapping.variable: mapping.mapping(solution.solution)
+                        for mapping in self.variables_mappings
+                    }
+                )
+                if self.variables_mappings is not None
+                else solution.solution
+            ),
+            value=(
+                self.value_mapping(solution.value)
+                if self.value_mapping is not None
+                else solution.value
+            ),
+            steps=solution.steps,
         )
 
         if self.parent is not None:
-            mapped_variables = self.parent.map(mapped_variables)
-        return mapped_variables
+            mapped_solution = self.parent.map(mapped_solution)
+
+        return mapped_solution
 
 
 @dataclass(frozen=True)
@@ -56,7 +89,7 @@ class Problem:
     objective: Objective
     constraints: tuple[Constraint, ...]
     variables_constraints: tuple[VariableConstraint, ...]
-    variables_mapper: VariablesMapper | None = field(compare=False)
+    solution_mapper: SolutionMapper | None = field(compare=False)
 
     def __init__(
         self,
@@ -64,7 +97,7 @@ class Problem:
         constraints: tuple[Constraint, ...] | list[Constraint],
         variables_constraints: tuple[VariableConstraint, ...]
         | list[VariableConstraint],
-        variables_mapper: VariablesMapper | None = None,
+        solution_mapper: SolutionMapper | None = None,
     ):
         if len(objective.coefficients) != len(variables_constraints):
             raise ObjectiveCoefficientsCountMismatchError(
@@ -87,7 +120,7 @@ class Problem:
         object.__setattr__(self, "objective", objective)
         object.__setattr__(self, "constraints", tuple(constraints))
         object.__setattr__(self, "variables_constraints", tuple(variables_constraints))
-        object.__setattr__(self, "variables_mapper", variables_mapper)
+        object.__setattr__(self, "solution_mapper", solution_mapper)
 
     def c(self):
         return np.array(self.objective.coefficients, dtype=float)
@@ -126,7 +159,10 @@ class Problem:
             ),
             constraints=self.constraints,
             variables_constraints=self.variables_constraints,
-            variables_mapper=self.variables_mapper,
+            solution_mapper=SolutionMapper(
+                value_mapping=lambda value: -value,
+                parent=self.solution_mapper,
+            ),
         )
 
     def to_non_negative_constraints_constants(self) -> Problem:
@@ -163,7 +199,7 @@ class Problem:
                 for constraint in constraints
             ],
             variables_constraints=self.variables_constraints,
-            variables_mapper=self.variables_mapper,
+            solution_mapper=self.solution_mapper,
         )
 
     def to_equality_constraints(self) -> Problem:
@@ -213,12 +249,12 @@ class Problem:
                 for constraint in constraints
             ],
             variables_constraints=tuple(variables_constraints),
-            variables_mapper=VariablesMapper(
-                mappings=tuple(
+            solution_mapper=SolutionMapper(
+                variables_mappings=tuple(
                     VariableMapping(constraint.variable)
                     for constraint in self.variables_constraints
                 ),
-                parent=self.variables_mapper,
+                parent=self.solution_mapper,
             ),
         )
 
@@ -229,7 +265,7 @@ class Problem:
             for constraint in self.constraints
         ]
         variables_constraints: list[VariableConstraint] = []
-        mappings: list[VariableMapping] = []
+        variables_mappings: list[VariableMapping] = []
 
         for i, variable_constraint in enumerate(self.variables_constraints):
             objective.coefficients.append(self.objective.coefficients[i])
@@ -241,7 +277,9 @@ class Problem:
                 case VariableConstraintType.NON_NEGATIVE:
                     variables_constraints.append(variable_constraint)
 
-                    mappings.append(VariableMapping(variable_constraint.variable))
+                    variables_mappings.append(
+                        VariableMapping(variable_constraint.variable)
+                    )
                 case VariableConstraintType.NON_POSITIVE:
                     objective.coefficients[-1] *= -1
 
@@ -259,7 +297,7 @@ class Problem:
                         )
                     )
 
-                    mappings.append(
+                    variables_mappings.append(
                         VariableMapping(
                             variable_constraint.variable,
                             lambda variables: -variables[negated_variable],
@@ -294,7 +332,7 @@ class Problem:
                         )
                     )
 
-                    mappings.append(
+                    variables_mappings.append(
                         VariableMapping(
                             variable_constraint.variable,
                             lambda variables: (
@@ -317,8 +355,9 @@ class Problem:
                 for constraint in constraints
             ],
             variables_constraints=tuple(variables_constraints),
-            variables_mapper=VariablesMapper(
-                mappings=tuple(mappings), parent=self.variables_mapper
+            solution_mapper=SolutionMapper(
+                variables_mappings=tuple(variables_mappings),
+                parent=self.solution_mapper,
             ),
         )
 
