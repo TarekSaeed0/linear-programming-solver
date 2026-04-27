@@ -21,6 +21,45 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrl: './app.css',
 })
 export class App {
+
+  protected showSteps = false;
+protected currentStep = 0;
+
+openSteps() {
+  this.currentStep = 0;
+  this.showSteps = true;
+}
+
+closeSteps() {
+  this.showSteps = false;
+}
+
+nextStep() {
+  if (this.solutionResult && this.currentStep < this.solutionResult.steps.length - 1) {
+    this.currentStep++;
+  }
+}
+
+prevStep() {
+  if (this.currentStep > 0) {
+    this.currentStep--;
+  }
+}
+
+formatCoefficients(coefficients: number[], variables_constraints: any[]): string {
+  return coefficients
+    .map((c, i) => {
+      const v = variables_constraints[i]?.variable;
+      const varName = v ? `${v.name}${v.index ?? ''}` : `x${i + 1}`;
+      if (c === 0) return null;
+      const sign = c < 0 ? '-' : '+';
+      const abs = Math.abs(c);
+      return `${sign} ${abs}${varName}`;
+    })
+    .filter(Boolean)
+    .join(' ')
+    .replace(/^\+ /, '');
+}
   // @ViewChild('solutionDiv') solutionDiv!: ElementRef;
   private cdr = inject(ChangeDetectorRef);
   private solverService = inject(SolverService);
@@ -70,11 +109,16 @@ onConstraintsChange(updated: any) {
     const problem = {
       objective: cleanObjective,
       constraints: cleanConstraints,
-      variables: this.variables
-    };
+variables_constraints: this.variables.map(v => ({
+    type: v.type,
+    variable: {
+      name: v.name.name,
+      index: v.name.index
+    }
+  }))    };
 
     console.log(" Payload ready to send:", JSON.stringify(problem, null, 2));
-
+console.log("FINAL PROBLEM:", JSON.stringify(problem, null, 2));
     this.solverService.solve(this.selectedMethod, problem).subscribe({
       next: (res: Solution) => {
         console.log(" Backend Response:", res);
@@ -86,8 +130,9 @@ onConstraintsChange(updated: any) {
   // }, 100);
       },
       error: (err: any) => {
-        console.error('Error solving problem:', err);
-        alert('Server Error: ' + (err.error?.detail || 'Unknown error'));
+      console.error('Full error:', JSON.stringify(err.error, null, 2));
+        console.error(' dfssssssssssssssss dsaffffffff dsaffffff Error solving problem:', err);
+        alert('Server Error:asdfasfadsf ' + (err.error?.detail || 'Unknown error'));
         this.isSolving = false;
         this.cdr.detectChanges(); 
       }

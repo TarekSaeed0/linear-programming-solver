@@ -48,12 +48,17 @@
         <div class="mt-2">
           <span class="font-semibold text-gray-700 mb-2 block">Decision Variables:</span>
           <div class="grid grid-cols-2 gap-2">
-            @for (val of solutionResult.solution; track $index) {
-              <div class="bg-white p-2 rounded shadow-sm border">
-                <math><msub><mi>{{ variables[$index].name.name }}</mi><mn>{{ variables[$index].name.index }}</mn></msub></math> 
-                <span class="font-bold ml-2">= {{ val }}</span>
-              </div>
-            }
+         @for (val of solutionResult.solution; track $index) {
+  <div class="bg-white p-2 rounded shadow-sm border">
+    <math>
+      <msub>
+        <mi>{{ val.variable.name }}</mi>
+        <mn>{{ val.variable.index }}</mn>
+      </msub>
+    </math>
+    <span class="font-bold ml-2">= {{ val.value }}</span>
+  </div>
+}
           </div>
         </div>
       } @else {
@@ -61,6 +66,154 @@
           The problem is {{ solutionResult.type | uppercase }}!
         </div>
       }
+      <button
+        class="mt-2 px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 w-fit"
+        (click)="openSteps()">
+        View Steps
+      </button>
     </div>
   }
 </main>
+<!-- Steps Popup -->
+@if (showSteps && solutionResult) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-2xl w-[700px] max-h-[80vh] flex flex-col">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b">
+        <h2 class="text-lg font-bold">
+          Step {{ currentStep + 1 }} of {{ solutionResult.steps.length }}
+        </h2>
+        <button (click)="closeSteps()" class="p-1 rounded-lg text-gray-500 hover:text-red-600">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Step Content -->
+      <div class="p-4 overflow-y-auto flex-1">
+        @if (solutionResult.steps[currentStep].type === 'standard-form-problem' ||
+             solutionResult.steps[currentStep].type === 'artificial-problem') {
+          <div class="flex flex-col gap-3">
+            <h3 class="font-semibold text-gray-700 capitalize">
+              {{ solutionResult.steps[currentStep].type === 'standard-form-problem'
+                ? 'Standard Form Problem'
+                : 'Artificial Problem' }}
+            </h3>
+            <div class="bg-gray-50 p-3 rounded border">
+              <p class="font-medium text-gray-600 mb-1">Objective:</p>
+              <p class="font-mono">
+                {{ solutionResult.steps[currentStep].problem.objective.type }}:
+                {{ formatCoefficients(solutionResult.steps[currentStep].problem.objective.coefficients,
+                   solutionResult.steps[currentStep].problem.variables_constraints) }}
+              </p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded border">
+              <p class="font-medium text-gray-600 mb-1">Constraints:</p>
+              @for (c of solutionResult.steps[currentStep].problem.constraints; track $index) {
+                <p class="font-mono">
+                  {{ formatCoefficients(c.coefficients,
+                     solutionResult.steps[currentStep].problem.variables_constraints) }}
+                  {{ c.type }} {{ c.constant }}
+                </p>
+              }
+            </div>
+          </div>
+        }
+
+        @if (solutionResult.steps[currentStep].type === 'initial-tableau' ||
+             solutionResult.steps[currentStep].type === 'pivot-tableau') {
+          <div class="flex flex-col gap-3">
+            <h3 class="font-semibold text-gray-700">
+              {{ solutionResult.steps[currentStep].type === 'initial-tableau'
+                ? 'Initial Tableau'
+                : 'Pivot Tableau' }}
+            </h3>
+
+            @if (solutionResult.steps[currentStep].type === 'pivot-tableau') {
+              <div class="flex gap-4 text-sm">
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Entering: {{ solutionResult.steps[currentStep].entering_variable.name
+                  }}<sub>{{ solutionResult.steps[currentStep].entering_variable.index }}</sub>
+                </span>
+                <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
+                  Leaving: {{ solutionResult.steps[currentStep].leaving_variable.name
+                  }}<sub>{{ solutionResult.steps[currentStep].leaving_variable.index }}</sub>
+                </span>
+              </div>
+            }
+
+            <div class="overflow-x-auto">
+              <table class="border-collapse text-sm font-mono">
+                <thead>
+                  <tr>
+                    <th class="border border-gray-300 px-3 py-1 bg-gray-100">Basic</th>
+                    @for (v of solutionResult.steps[currentStep].tableau.variables; track $index) {
+                      <th class="border border-gray-300 px-3 py-1 bg-gray-100">
+                        {{ v.name }}<sub>{{ v.index }}</sub>
+                      </th>
+                    }
+                    <th class="border border-gray-300 px-3 py-1 bg-gray-100">RHS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of solutionResult.steps[currentStep].tableau.data; track $index; let last = $last) {
+                    <tr [class]="last ? 'bg-yellow-50' : ''">
+                      <td class="border border-gray-300 px-3 py-1 font-semibold bg-gray-50">
+                        @if (last) { Z }
+                        @else {
+                          {{ solutionResult.steps[currentStep].tableau.basic_variables[$index]?.name }}
+                          <sub>{{ solutionResult.steps[currentStep].tableau.basic_variables[$index]?.index }}</sub>
+                        }
+                      </td>
+                      @for (cell of row; track $index; let lastCell = $last) {
+                        <td class="border border-gray-300 px-3 py-1 text-center"
+                            [class]="lastCell ? 'bg-blue-50 font-semibold' : ''">
+                          {{ cell }}
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        @if (solutionResult.steps[currentStep].type === 'initial-basic-solution') {
+          <div class="flex flex-col gap-2">
+            <h3 class="font-semibold text-gray-700">Initial Basic Solution</h3>
+            <div class="grid grid-cols-2 gap-2">
+              @for (v of solutionResult.steps[currentStep].solution; track $index) {
+                <div class="bg-gray-50 p-2 rounded border font-mono">
+                  {{ v.variable.name }}<sub>{{ v.variable.index }}</sub> = {{ v.value }}
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="flex items-center justify-between p-4 border-t">
+        <button
+          class="px-4 py-2 bg-gray-200 font-semibold rounded disabled:opacity-40"
+          (click)="prevStep()"
+          [disabled]="currentStep === 0">
+          ← Prev
+        </button>
+        <span class="text-sm text-gray-500">
+          {{ solutionResult.steps[currentStep].type }}
+        </span>
+        <button
+          class="px-4 py-2 bg-blue-600 text-white font-semibold rounded disabled:opacity-40"
+          (click)="nextStep()"
+          [disabled]="currentStep === solutionResult.steps.length - 1">
+          Next →
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

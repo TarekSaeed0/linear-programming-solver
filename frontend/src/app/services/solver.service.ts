@@ -16,7 +16,7 @@ export class SolverService {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:8000/api/solve/';
 
-  solve(method: string, problem: Problem): Observable<Solution> {
+  solve(method: string, problem: any): Observable<Solution> {
     const requestPayload: SolveRequest = { method, problem };
     return this.http.post<Solution>(this.apiUrl, requestPayload);
   }
