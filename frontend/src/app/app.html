@@ -1,94 +1,96 @@
-<main class="flex flex-col gap-4 items-center p-4">
-  <div [formGroup]="form" class="box flex-col">
-    <h1 class="text-2xl font-bold">Problem Input</h1>
-    <div class="flex gap-4">
-      <div class="flex flex-col gap-4">
-        <div class="subbox">
-          <h2 class="text-lg font-semibold mb-1">Objective</h2>
-          <app-objective-input formControlName="objective" [variables]="variables()" />
-        </div>
-        <div class="subbox h-full">
-          <h2 class="text-lg font-semibold mb-1">Constraints</h2>
-          <app-constraints-input formControlName="constraints" [variables]="variables()" />
-        </div>
-      </div>
-      <div class="subbox">
-        <h2 class="text-lg font-semibold mb-1">Variables Constraints</h2>
-        <app-variables-constraints-input formControlName="variables_constraints" />
-      </div>
-    </div>
-  </div>
-
-  <div class="box">
-    <div class="flex items-center gap-2">
-      <label class="font-medium">Method:</label>
-      <select [(ngModel)]="selectedMethod">
-        <option value="standard-simplex">Standard Simplex</option>
-        <option value="two-phase-simplex">Two-Phase Simplex</option>
-      </select>
-    </div>
-    <button
-      class="px-6 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50"
-      (click)="onSolve()"
-      [disabled]="isSolving"
-    >
-      {{ isSolving ? 'Solving...' : 'Solve Problem' }}
-    </button>
-  </div>
-
-  @if (solutionResult) {
-    <div
-      class="flex flex-col gap-4 p-6 rounded-md bg-green-50 border border-green-200 shadow-md min-w-[600px] mt-4"
-    >
-      <h2 class="text-xl font-bold text-green-800 border-b border-green-300 pb-2">
-        Solution Result
-      </h2>
-
-      @if (solutionResult.type === 'optimal') {
-        <div class="text-lg">
-          <span class="font-semibold text-gray-700">Optimal Value (Z):</span>
-          <span class="font-bold text-blue-600 ml-2">{{ solutionResult.value }}</span>
-        </div>
-
-        <div class="mt-2">
-          <span class="font-semibold text-gray-700 mb-2 block">Decision Variables:</span>
-          <div class="grid grid-cols-2 gap-2">
-            @for (val of solutionResult.solution; track $index) {
-              <div class="bg-white p-2 rounded shadow-sm border">
-                <math>
-                  <msub>
-                    <mi>{{ val.variable.name }}</mi>
-                    <mn>{{ val.variable.index }}</mn>
-                  </msub>
-                </math>
-                <span class="font-bold ml-2">= {{ val.value }}</span>
-              </div>
-            }
+<main class="flex flex-col items-center p-8">
+  <div class="flex flex-col gap-6">
+    <form [formGroup]="form" class="flex flex-col gap-6">
+      <div class="box flex-col">
+        <h1 class="text-2xl font-bold">Problem Input</h1>
+        <div class="flex gap-4">
+          <div class="flex flex-col gap-4">
+            <div class="subbox">
+              <h2 class="text-lg font-semibold mb-1">Objective</h2>
+              <app-objective-input formControlName="objective" [variables]="variables()" />
+            </div>
+            <div class="subbox h-full">
+              <h2 class="text-lg font-semibold mb-1">Constraints</h2>
+              <app-constraints-input formControlName="constraints" [variables]="variables()" />
+            </div>
+          </div>
+          <div class="subbox">
+            <h2 class="text-lg font-semibold mb-1">Variables Constraints</h2>
+            <app-variables-constraints-input formControlName="variables_constraints" />
           </div>
         </div>
-      } @else {
-        <div class="text-red-600 font-bold text-lg">
-          The problem is {{ solutionResult.type | uppercase }}!
+      </div>
+
+      <div class="flex flex-col items-center">
+        <div class="box w-fit">
+          <div class="flex items-center gap-2">
+            <label class="font-medium">Method:</label>
+            <select formControlName="method">
+              <option value="standard-simplex">Standard Simplex</option>
+              <option value="two-phase-simplex">Two-Phase Simplex</option>
+            </select>
+          </div>
+          <button
+            class="px-6 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50"
+            (click)="onSolve()"
+            [disabled]="isSolving"
+          >
+            {{ isSolving ? 'Solving...' : 'Solve Problem' }}
+          </button>
         </div>
-      }
-      <button
-        class="mt-2 px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700 w-fit"
-        (click)="openSteps()"
-      >
-        View Steps
-      </button>
-    </div>
-  }
+      </div>
+    </form>
+
+    @let result = this.solutionResult();
+
+    @if (result) {
+      <div class="box flex-col min-w-150 w-full">
+        <h1 class="text-2xl font-bold border-b-2 border-gray-300 pb-2">Solution Result</h1>
+
+        @if (result.type === 'optimal') {
+          <div class="text-lg">
+            <span class="font-semibold text-gray-700">Optimal Value (Z):</span>
+            <span class="font-bold text-green-600 ml-2">{{ result.value | number: '1.0-9' }}</span>
+          </div>
+
+          <div class="mt-2">
+            <span class="font-semibold text-gray-700 mb-2 block">Decision Variables:</span>
+            <div class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+              @for (val of result.solution; track $index) {
+                <div class="bg-white p-2 rounded shadow-sm">
+                  <math>
+                    <msub>
+                      <mi>{{ val.variable.name }}</mi>
+                      <mn>{{ val.variable.index }}</mn>
+                    </msub>
+                  </math>
+                  <span class="font-bold ml-2">= {{ val.value | number: '1.0-9' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="text-red-600 font-bold text-lg">
+            The problem is {{ result.type | uppercase }}!
+          </div>
+        }
+        <button
+          class="mt-2 px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50"
+          (click)="openSteps()"
+        >
+          View Steps
+        </button>
+      </div>
+    }
+  </div>
 </main>
 <!-- Steps Popup -->
-@if (showSteps && solutionResult) {
+@if (showSteps && result) {
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-xl shadow-2xl w-[700px] max-h-[80vh] flex flex-col">
+    <div class="bg-white rounded-xl shadow-2xl w-175 max-h-[80vh] flex flex-col">
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b">
-        <h2 class="text-lg font-bold">
-          Step {{ currentStep + 1 }} of {{ solutionResult.steps.length }}
-        </h2>
+        <h2 class="text-lg font-bold">Step {{ currentStep + 1 }} of {{ result.steps.length }}</h2>
         <button (click)="closeSteps()" class="p-1 rounded-lg text-gray-500 hover:text-red-600">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -103,16 +105,15 @@
         </button>
       </div>
 
+      @let step = result.steps[currentStep];
+
       <!-- Step Content -->
       <div class="p-4 overflow-y-auto flex-1">
-        @if (
-          solutionResult.steps[currentStep].type === 'standard-form-problem' ||
-          solutionResult.steps[currentStep].type === 'artificial-problem'
-        ) {
+        @if (step.type === 'standard-form-problem' || step.type === 'artificial-problem') {
           <div class="flex flex-col gap-3">
             <h3 class="font-semibold text-gray-700 capitalize">
               {{
-                solutionResult.steps[currentStep].type === 'standard-form-problem'
+                step.type === 'standard-form-problem'
                   ? 'Standard Form Problem'
                   : 'Artificial Problem'
               }}
@@ -120,25 +121,20 @@
             <div class="bg-gray-50 p-3 rounded border">
               <p class="font-medium text-gray-600 mb-1">Objective:</p>
               <p class="font-mono">
-                {{ solutionResult.steps[currentStep].problem.objective.type }}:
+                {{ step.problem.objective.type }}:
                 {{
                   formatCoefficients(
-                    solutionResult.steps[currentStep].problem.objective.coefficients,
-                    solutionResult.steps[currentStep].problem.variables_constraints
+                    step.problem.objective.coefficients,
+                    step.problem.variables_constraints
                   )
                 }}
               </p>
             </div>
             <div class="bg-gray-50 p-3 rounded border">
               <p class="font-medium text-gray-600 mb-1">Constraints:</p>
-              @for (c of solutionResult.steps[currentStep].problem.constraints; track $index) {
+              @for (c of step.problem.constraints; track $index) {
                 <p class="font-mono">
-                  {{
-                    formatCoefficients(
-                      c.coefficients,
-                      solutionResult.steps[currentStep].problem.variables_constraints
-                    )
-                  }}
+                  {{ formatCoefficients(c.coefficients, step.problem.variables_constraints) }}
                   {{ c.type }} {{ c.constant }}
                 </p>
               }
@@ -146,28 +142,21 @@
           </div>
         }
 
-        @if (
-          solutionResult.steps[currentStep].type === 'initial-tableau' ||
-          solutionResult.steps[currentStep].type === 'pivot-tableau'
-        ) {
+        @if (step.type === 'initial-tableau' || step.type === 'pivot-tableau') {
           <div class="flex flex-col gap-3">
             <h3 class="font-semibold text-gray-700">
-              {{
-                solutionResult.steps[currentStep].type === 'initial-tableau'
-                  ? 'Initial Tableau'
-                  : 'Pivot Tableau'
-              }}
+              {{ step.type === 'initial-tableau' ? 'Initial Tableau' : 'Pivot Tableau' }}
             </h3>
 
-            @if (solutionResult.steps[currentStep].type === 'pivot-tableau') {
+            @if (step.type === 'pivot-tableau') {
               <div class="flex gap-4 text-sm">
                 <span class="bg-green-100 text-green-800 px-2 py-1 rounded">
-                  Entering: {{ solutionResult.steps[currentStep].entering_variable.name
-                  }}<sub>{{ solutionResult.steps[currentStep].entering_variable.index }}</sub>
+                  Entering: {{ step.entering_variable.name
+                  }}<sub>{{ step.entering_variable.index }}</sub>
                 </span>
                 <span class="bg-red-100 text-red-800 px-2 py-1 rounded">
-                  Leaving: {{ solutionResult.steps[currentStep].leaving_variable.name
-                  }}<sub>{{ solutionResult.steps[currentStep].leaving_variable.index }}</sub>
+                  Leaving: {{ step.leaving_variable.name
+                  }}<sub>{{ step.leaving_variable.index }}</sub>
                 </span>
               </div>
             }
@@ -177,7 +166,7 @@
                 <thead>
                   <tr>
                     <th class="border border-gray-300 px-3 py-1 bg-gray-100">Basic</th>
-                    @for (v of solutionResult.steps[currentStep].tableau.variables; track $index) {
+                    @for (v of step.tableau.variables; track $index) {
                       <th class="border border-gray-300 px-3 py-1 bg-gray-100">
                         {{ v.name }}<sub>{{ v.index }}</sub>
                       </th>
@@ -186,22 +175,14 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (
-                    row of solutionResult.steps[currentStep].tableau.data;
-                    track $index;
-                    let last = $last
-                  ) {
+                  @for (row of step.tableau.data; track $index; let last = $last) {
                     <tr [class]="last ? 'bg-yellow-50' : ''">
                       <td class="border border-gray-300 px-3 py-1 font-semibold bg-gray-50">
                         @if (last) {
                           Z
                         } @else {
-                          {{
-                            solutionResult.steps[currentStep].tableau.basic_variables[$index]?.name
-                          }}
-                          <sub>{{
-                            solutionResult.steps[currentStep].tableau.basic_variables[$index]?.index
-                          }}</sub>
+                          {{ step.tableau.basic_variables[$index]?.name }}
+                          <sub>{{ step.tableau.basic_variables[$index]?.index }}</sub>
                         }
                       </td>
                       @for (cell of row; track $index; let lastCell = $last) {
@@ -220,11 +201,11 @@
           </div>
         }
 
-        @if (solutionResult.steps[currentStep].type === 'initial-basic-solution') {
+        @if (step.type === 'initial-basic-solution') {
           <div class="flex flex-col gap-2">
             <h3 class="font-semibold text-gray-700">Initial Basic Solution</h3>
             <div class="grid grid-cols-2 gap-2">
-              @for (v of solutionResult.steps[currentStep].solution; track $index) {
+              @for (v of step.solution; track $index) {
                 <div class="bg-gray-50 p-2 rounded border font-mono">
                   {{ v.variable.name }}<sub>{{ v.variable.index }}</sub> = {{ v.value }}
                 </div>
@@ -243,12 +224,12 @@
           ← Prev
         </button>
         <span class="text-sm text-gray-500">
-          {{ solutionResult.steps[currentStep].type }}
+          {{ step.type }}
         </span>
         <button
           class="px-4 py-2 bg-blue-600 text-white font-semibold rounded disabled:opacity-40"
           (click)="nextStep()"
-          [disabled]="currentStep === solutionResult.steps.length - 1"
+          [disabled]="currentStep === result.steps.length - 1"
         >
           Next →
         </button>

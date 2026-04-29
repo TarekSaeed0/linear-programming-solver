@@ -4,15 +4,20 @@ export const VariableConstraintType = {
   UNRESTRICTED: 'unrestricted',
 } as const;
 
+export type VariableConstraintType =
+  (typeof VariableConstraintType)[keyof typeof VariableConstraintType];
+
 export interface Variable {
   name: string;
   index?: number;
 }
 
-export type VariableConstraintType =
-  (typeof VariableConstraintType)[keyof typeof VariableConstraintType];
-
 export interface VariableConstraint {
   type: VariableConstraintType;
   variable: Variable;
+}
+
+export interface VariableValue {
+  variable: Variable;
+  value: number;
 }

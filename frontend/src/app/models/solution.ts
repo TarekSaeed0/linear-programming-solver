@@ -1,3 +1,6 @@
+import { Step } from './step';
+import { VariableValue } from './variable';
+
 export const SolutionType = {
   OPTIMAL: 'optimal',
   UNBOUNDED: 'unbounded',
@@ -6,25 +9,21 @@ export const SolutionType = {
 
 export type SolutionType = (typeof SolutionType)[keyof typeof SolutionType];
 
-export interface VariableValue {
-  variable: { name: string; index: number | null };
-  value: number;
-}
 export interface OptimalSolution {
   type: typeof SolutionType.OPTIMAL;
   solution: VariableValue[];
   value: number;
-  steps: any[];
+  steps: Step[];
 }
 
 export interface UnboundedSolution {
   type: typeof SolutionType.UNBOUNDED;
-  steps: any[];
+  steps: Step[];
 }
 
 export interface InfeasibleSolution {
   type: typeof SolutionType.INFEASIBLE;
-  steps: any[];
+  steps: Step[];
 }
 
 export type Solution = OptimalSolution | UnboundedSolution | InfeasibleSolution;
