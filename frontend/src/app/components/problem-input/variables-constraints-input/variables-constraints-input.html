@@ -1,9 +1,6 @@
 <div class="flex flex-col gap-2">
   @if (form.length !== 0) {
-    <div
-      class="grid gap-y-1.5 items-center justify-items-center w-fit"
-      [style.gridTemplateColumns]="'repeat(3, auto)'"
-    >
+    <div class="grid grid-cols-[repeat(3,auto)] gap-y-1.5 items-center justify-items-center w-fit">
       @for (i of form.length | range; track $index) {
         <button
           class="mr-2 p-1 rounded-lg"
