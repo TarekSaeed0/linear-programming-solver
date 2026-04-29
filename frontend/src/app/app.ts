@@ -19,7 +19,6 @@ import { Problem } from './models/problem';
   selector: 'app-root',
   imports: [
     ReactiveFormsModule,
-    UpperCasePipe,
     DecimalPipe,
     ObjectiveInput,
     ConstraintsInput,
