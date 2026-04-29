@@ -91,9 +91,9 @@ from core.domain import (
     Objective,
     ObjectiveType,
     Problem,
+    VariableConstraint,
+    VariableConstraintType,
     Variable,
-    VariableName,
-    VariableType,
 )
 from core.solver.methods.standard_simplex import StandardSimplex
 
@@ -103,9 +103,13 @@ problem=Problem(
         Constraint(ConstraintType.LESS_EQUAL, [1, 1], 3),
         Constraint(ConstraintType.LESS_EQUAL, [2, 1], 4),
     ],
-    variables=[
-        Variable(VariableType.NON_NEGATIVE, VariableName("x", 1)),
-        Variable(VariableType.NON_NEGATIVE, VariableName("x", 2)),
+    variables_constraints=[
+        VariableConstraint(
+            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+        ),
+        VariableConstraint(
+            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+        ),
     ],
 )
 
@@ -138,11 +142,7 @@ Choose the solution method: 2
 The problem has an optimal solution
 Optimal value: -19.0
 Optimal solution:
-x₁ = -1
-x₂ = 0
-x₃ = 1
-x₄ = 0
-x₅ = 2
+x₁ = -1, x₂ = 0, x₃ = 1, x₄ = 0, x₅ = 2
 ```
 
 ## License
