@@ -27,6 +27,13 @@
     </a>
 </div>
 
+## Screenshots
+
+<div align="center" style="display: flex; flex-direction: row; gap: 10px;">
+    <img width="50%" alt="Problem Input Screenshot" src=".github/assets/screenshot1.png">
+    <img width="50%" alt="Solution Result Screenshot" src=".github/assets/screenshot2.png">
+</div>
+
 ## Features
 
 - Solve linear programming problems using various methods.
@@ -34,6 +41,8 @@
 - Support for both maximization and minimization problems.
 - Support for unrestricted variables.
 - Supports both Standard Simplex and Two-Phase Simplex methods.
+- Step by step solution.
+- Both CLI and GUI applications.
 
 ## Building
 
