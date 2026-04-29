@@ -23,9 +23,9 @@
 
       <math class="ml-1">
         <msub>
-          <mi>{{ variables()[i].name.name }}</mi>
-          @if (variables()[i].name.index !== null) {
-            <mn> {{ variables()[i].name.index }} </mn>
+          <mi>{{ variables()[i].name }}</mi>
+          @if (variables()[i].index !== null) {
+            <mn> {{ variables()[i].index }} </mn>
           }
         </msub>
       </math>

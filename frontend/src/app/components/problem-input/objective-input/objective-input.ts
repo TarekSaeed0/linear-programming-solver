@@ -11,9 +11,6 @@ import {
 import {
   AbstractControl,
   ControlValueAccessor,
-  FormArray,
-  FormControl,
-  FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   NonNullableFormBuilder,
@@ -26,7 +23,7 @@ import { AutoSizeInputDirective } from 'ngx-autosize-input';
 import { RangePipe } from '../../../pipes/range.pipe';
 import { ObjectiveType } from '../../../models/objective';
 import { Variable } from '../../../models/variable';
-import { output } from '@angular/core';
+
 @Component({
   selector: 'app-objective-input',
   imports: [ReactiveFormsModule, AutoSizeInputDirective, RangePipe],
@@ -47,7 +44,6 @@ import { output } from '@angular/core';
 })
 export class ObjectiveInput implements ControlValueAccessor, Validator, OnChanges {
   variables = input.required<Variable[]>();
-valueChange = output<any>();
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly numberValidator = Validators.pattern(/^[-+]?\d+(\.\d+)?$/);
 
@@ -67,23 +63,26 @@ valueChange = output<any>();
   private onTouched: () => void = () => {};
 
   ngOnInit() {
-   this.form.valueChanges.subscribe((value) => {
-    this.onChange(value);
-    this.onTouched();
-    this.valueChange.emit(value);
-  });
+    this.form.valueChanges.subscribe((value) => {
+      this.onChange(value);
+      this.onTouched();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['variables']) {
       this.writeValue(this.form.value as any);
-Promise.resolve().then(() => {
-      this.onChange(this.form.value);
-    });
-      }
+      Promise.resolve().then(() => {
+        this.onChange(this.form.value);
+      });
+    }
   }
 
   writeValue(value: { type: ObjectiveType; coefficients: string[] }): void {
+    if (!value) {
+      return;
+    }
+
     this.form.controls.type.setValue(value.type ?? ObjectiveType.MAXIMIZE, { emitEvent: false });
 
     while (this.form.controls.coefficients.length < this.variables().length) {

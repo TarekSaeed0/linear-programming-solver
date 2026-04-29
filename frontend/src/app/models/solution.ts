@@ -6,7 +6,6 @@ export const SolutionType = {
 
 export type SolutionType = (typeof SolutionType)[keyof typeof SolutionType];
 
-
 export interface VariableValue {
   variable: { name: string; index: number | null };
   value: number;
@@ -15,7 +14,7 @@ export interface OptimalSolution {
   type: typeof SolutionType.OPTIMAL;
   solution: VariableValue[];
   value: number;
-   steps: any[];
+  steps: any[];
 }
 
 export interface UnboundedSolution {

@@ -2,14 +2,14 @@
   @if (form.length !== 0) {
     <div
       class="grid gap-y-1.5 items-center justify-items-center w-fit"
-      [style.gridTemplateColumns]="'repeat(' + (variables().length * 3 + 2) + ', auto)'"
+      [style.gridTemplateColumns]="'repeat(3, auto)'"
     >
       @for (i of form.length | range; track $index) {
         <button
           class="mr-2 p-1 rounded-lg"
           type="button"
-          title="Remove Constraint"
-          (click)="removeConstraint(i)"
+          title="Remove Variable Constraint"
+          (click)="removeVariableConstraint(i)"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -27,52 +27,22 @@
           </svg>
         </button>
 
-        @for (j of form.at(i).controls.coefficients.length | range; track $index) {
-          <input
-            #input
-            class="min-w-full h-fit"
-            type="text"
-            placeholder="0"
-            [formControl]="form.at(i).controls.coefficients.at(j)"
-            autoSizeInput
-            [extraWidth]="10"
-            (keydown)="onKeyDown(i, j, $event)"
-          />
-
-          <math class="ml-1">
-            <msub>
-              <mi>{{ variables()[j].name }}</mi>
-              @if (variables()[j].index !== null) {
-                <mn> {{ variables()[j].index }} </mn>
-              }
-            </msub>
-          </math>
-
-          @if (j < variables().length - 1) {
-            <math>
-              <mo>+</mo>
-            </math>
-          }
-        }
+        <math class="ml-1">
+          <msub>
+            <mi>{{ form.at(i).controls.variable.value.name }}</mi>
+            @if (form.at(i).controls.variable.value.index !== null) {
+              <mn> {{ form.at(i).controls.variable.value.index }} </mn>
+            }
+          </msub>
+        </math>
 
         <select class="ml-1 mr-2" [formControl]="form.at(i).controls.type">
-          @for (constraintType of constraintTypes; track constraintType.value) {
-            <option [value]="constraintType.value">
-              <span [innerHTML]="constraintType.label"></span>
+          @for (variableType of variableTypes; track variableType.value) {
+            <option [value]="variableType.value">
+              <span [innerHTML]="variableType.label"></span>
             </option>
           }
         </select>
-
-        <input
-          #input
-          class="min-w-full h-fit"
-          type="text"
-          placeholder="0"
-          [formControl]="form.at(i).controls.constant"
-          autoSizeInput
-          [extraWidth]="10"
-          (keydown)="onKeyDown(i, variables().length, $event)"
-        />
       }
     </div>
   }
@@ -80,8 +50,8 @@
   <button
     class="flex items-center gap-1"
     type="button"
-    title="Add Constraint"
-    (click)="addConstraint()"
+    title="Add Variable Constraint"
+    (click)="addVariableConstraint()"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -93,6 +63,6 @@
     >
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
     </svg>
-    Constraint
+    Variable Constraint
   </button>
 </div>

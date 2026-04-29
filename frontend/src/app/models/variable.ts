@@ -1,17 +1,18 @@
-export const VariableType = {
+export const VariableConstraintType = {
   NON_NEGATIVE: 'non-negative',
   NON_POSITIVE: 'non-positive',
   UNRESTRICTED: 'unrestricted',
 } as const;
 
-export interface VariableName {
+export interface Variable {
   name: string;
   index?: number;
 }
 
-export type VariableType = (typeof VariableType)[keyof typeof VariableType];
+export type VariableConstraintType =
+  (typeof VariableConstraintType)[keyof typeof VariableConstraintType];
 
-export interface Variable {
-  type: VariableType;
-  name: VariableName;
+export interface VariableConstraint {
+  type: VariableConstraintType;
+  variable: Variable;
 }

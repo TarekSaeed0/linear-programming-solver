@@ -26,7 +26,7 @@ import { AutoSizeInputDirective } from 'ngx-autosize-input';
 import { RangePipe } from '../../../pipes/range.pipe';
 import { ConstraintType } from '../../../models/constraint';
 import { Variable } from '../../../models/variable';
-import { output } from '@angular/core';
+
 @Component({
   selector: 'app-constraints-input',
   imports: [ReactiveFormsModule, AutoSizeInputDirective, RangePipe],
@@ -47,7 +47,6 @@ import { output } from '@angular/core';
 })
 export class ConstraintsInput implements ControlValueAccessor, Validator, OnChanges {
   variables = input.required<Variable[]>();
-valueChange = output<any>();
   private readonly formBuilder = inject(NonNullableFormBuilder);
   private readonly numberValidator = Validators.pattern(/^[-+]?\d+(\.\d+)?$/);
 
@@ -72,26 +71,25 @@ valueChange = output<any>();
 
   ngOnInit() {
     this.form.valueChanges.subscribe((value) => {
-    this.onChange(value);
-    this.onTouched();
-    this.valueChange.emit(value);
-  });
-
-    // this.addConstraint();
-    // this.addConstraint();
+      this.onChange(value);
+      this.onTouched();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['variables']) {
       this.writeValue(this.form.value as any);
-Promise.resolve().then(() => {
-      this.onChange(this.form.value);
-    });
-      }
+      Promise.resolve().then(() => {
+        this.onChange(this.form.value);
+      });
+    }
   }
 
   writeValue(value: { type: ConstraintType; coefficients: string[]; constant: string }[]): void {
-      if (!value) return;
+    if (!value) {
+      return;
+    }
+
     while (this.form.length < value.length) {
       this.addConstraint();
     }
