@@ -41,6 +41,8 @@
 
 - [Python](https://www.python.org/downloads/)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- [Node.js](https://nodejs.org/en/download)
+- [Angular CLI](https://angular.dev/tools/cli/setup-local)
 
 Clone the repository:
 
@@ -80,6 +82,28 @@ Or run CLI:
 uv run apps/cli/src/cli/main.py
 ```
 
+### Building Frontend
+
+Navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Install the dependencies using npm:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+- Run the Angular development server:
+
+```sh
+ng serve
+```
+
+- Open your web browser and navigate to `http://localhost:4200`
+
 ## Examples
 
 ### Using Core Package
@@ -115,7 +139,8 @@ problem=Problem(
 
 method = StandardSimplex()
 
-solution = method.solve(problem) # OptimalSolution(solution=(0.0, 3.0), value=6.0)
+solution = method.solve(problem)
+# solution = OptimalSolution(solution={ Variable("x", 1): 0.0, Variable("x", 2): 3.0 }, value=6.0)
 ```
 
 ### Using CLI Application
