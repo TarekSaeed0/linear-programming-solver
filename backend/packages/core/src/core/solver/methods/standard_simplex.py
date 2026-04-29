@@ -19,17 +19,40 @@ from core.domain.tableau import Tableau
 
 
 class StandardSimplex(Method):
-    def pivot_column(self, tableau: Tableau) -> int:
-        return tableau.data[-1, :-1].argmin().astype(int).item()
+    def pivot_column(self, tableau: Tableau, tolerance: float = 1e-9) -> int | None:
+        canidates = np.where(tableau.data[-1, :-1] < -tolerance)[0]
 
-    def pivot_row(self, tableau: Tableau, pivot_column: int) -> int:
-        ratios = np.full(tableau.data.shape[0] - 1, np.inf)
+        if len(canidates) == 0:
+            return None
 
-        for i in range(tableau.data.shape[0] - 1):
-            if tableau.data[i, pivot_column] > 0:
-                ratios[i] = tableau.data[i, -1] / tableau.data[i, pivot_column]
+        return canidates[tableau.data[-1, canidates].argmin()].item()
 
-        return ratios.argmin().astype(int).item()
+    def pivot_row(
+        self, tableau: Tableau, pivot_column: int, tolerance: float = 1e-9
+    ) -> int | None:
+        canidates = np.where(tableau.data[:-1, pivot_column] > tolerance)[0]
+
+        if len(canidates) == 0:
+            return None
+
+        ratios = tableau.data[canidates, -1] / tableau.data[canidates, pivot_column]
+
+        tied = canidates[np.isclose(ratios, ratios.min(), atol=1e-9)]
+
+        tied_rows = (
+            tableau.data[tied, :-1] / tableau.data[tied, pivot_column][:, np.newaxis]
+        )
+
+        for i in range(tied_rows.shape[1]):
+            minimum = tied_rows[:, i].min()
+            tied_mask = np.isclose(tied_rows[:, i], minimum, atol=1e-9)
+            tied = tied[tied_mask]
+            tied_rows = tied_rows[tied_mask]
+
+            if tied_rows.shape[0] == 1:
+                break
+
+        return tied[0].item()
 
     def solve_tableau(
         self, tableau: Tableau, steps: list[Step]
@@ -38,10 +61,7 @@ class StandardSimplex(Method):
 
         while True:
             column = self.pivot_column(tableau)
-
-            if tableau.data[-1, column] >= 0 or np.isclose(
-                tableau.data[-1, column], 0, atol=1e-9
-            ):
+            if column is None:
                 solution = np.zeros(tableau.data.shape[1] - 1)
 
                 for i in range(tableau.data.shape[0] - 1):
@@ -54,9 +74,7 @@ class StandardSimplex(Method):
                 ), tableau
 
             row = self.pivot_row(tableau, column)
-            if tableau.data[row, column] <= 0 or np.isclose(
-                tableau.data[row, column], 0, atol=1e-9
-            ):
+            if row is None:
                 return UnboundedSolution(steps), tableau
 
             entering_variable = tableau.variables[column]

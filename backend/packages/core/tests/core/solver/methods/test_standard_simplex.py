@@ -53,8 +53,44 @@ class TestStandardSimplex:
                     ],
                 ),
                 expected_solution=OptimalSolution(
-                    solution=frozendict({Variable("x", 1): 0.0, Variable("x", 2): 3.0}),
+                    solution=frozendict({Variable("x", 1): 0, Variable("x", 2): 3}),
                     value=6.0,
+                ),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [0.75, -20, 0.5, -6]),
+                    constraints=(
+                        Constraint(ConstraintType.LESS_EQUAL, [0.25, -8, -1, 9], 0),
+                        Constraint(ConstraintType.LESS_EQUAL, [0.5, -12, -0.5, 3], 0),
+                        Constraint(ConstraintType.LESS_EQUAL, [0, 0, 1, 0], 1),
+                    ),
+                    variables_constraints=(
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", None)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("y", None)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("z", None)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("w", None)
+                        ),
+                    ),
+                    solution_mapper=None,
+                ),
+                expected_solution=OptimalSolution(
+                    solution=frozendict(
+                        {
+                            Variable("x"): 1,
+                            Variable("y"): 0,
+                            Variable("z"): 1,
+                            Variable("w"): 0,
+                        }
+                    ),
+                    value=1.25,
                 ),
             ),
             TestCase(
