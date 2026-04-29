@@ -63,7 +63,9 @@ class Tableau:
             [
                 np.hstack(
                     [
-                        problem.A(),
+                        problem.A()
+                        if len(problem.constraints) > 0
+                        else np.empty((0, len(problem.variables_constraints))),
                         problem.b().reshape(-1, 1),
                     ]
                 ),

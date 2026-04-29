@@ -95,6 +95,40 @@ class TestStandardSimplex:
             ),
             TestCase(
                 problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, [3, 8]),
+                    constraints=[],
+                    variables_constraints=[
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 1)
+                        ),
+                        VariableConstraint(
+                            VariableConstraintType.NON_NEGATIVE, Variable("x", 2)
+                        ),
+                    ],
+                ),
+                expected_solution=UnboundedSolution(),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, []),
+                    constraints=[],
+                    variables_constraints=[],
+                ),
+                expected_solution=OptimalSolution(solution=frozendict(), value=0),
+            ),
+            TestCase(
+                problem=Problem(
+                    objective=Objective(ObjectiveType.MAXIMIZE, []),
+                    constraints=[
+                        Constraint(ConstraintType.LESS_EQUAL, [], 0),
+                        Constraint(ConstraintType.LESS_EQUAL, [], 0),
+                    ],
+                    variables_constraints=[],
+                ),
+                expected_solution=OptimalSolution(solution=frozendict(), value=0),
+            ),
+            TestCase(
+                problem=Problem(
                     objective=Objective(ObjectiveType.MAXIMIZE, [2, 1]),
                     constraints=[
                         Constraint(ConstraintType.LESS_EQUAL, [1, -2], 10),
